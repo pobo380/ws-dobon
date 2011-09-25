@@ -2,6 +2,7 @@
 require 'rubygems'
 require 'sequel'
 require 'sinatra'
+require 'digest/sha2'
 
 ### Configs
 
@@ -87,24 +88,52 @@ end
 
 ## APIs
 
-get 'room/create' do
-  #room = Models::Room.create(
-  #  :name => params[:name],
-  #  :is_closed => false
-  #)
+get '/room/create' do
+  return '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
 
-  'OK'
+  room = Models::Room.create(:name => params[:name], :is_closed => false)
+
+  '["OK"]'
 end
 
 get '/room/join' do
-  'OK'
+  return '["NG", "プレイヤーの名前を入力して下さい。"]' unless params[:name]
+  return '["NG", "部屋を指定して下さい。"]' unless params[:room_id]
+
+  player = Models::Player.create(
+    :room_id => params[:room_id],
+    :name => params[:name],
+    :hand => "",
+    :is_ready => false,
+    :is_active => true
+  )
+  player.update(:sessionkey => Digest::SHA256.hexdigest(Time.now.to_s + player.id.to_s))
+
+  session[:sessionkey] = player.sessionkey
+
+  '["OK"]'
 end
 
 get '/room/quit' do
-  'OK'
+end
+
+# player api filter
+before '/player/*' do
+  @player = Models::Player.find(:sessionkey => session[:sessionkey])
+
+  begin
+    session[:sessionkey] = ''
+    redirect '/'
+  end if session[:sessionkey].nil? or @player.nil?
 end
 
 get '/player/ready' do
+  @player.update(:is_ready => true)
+  'OK'
+end
+
+get '/player/not-ready' do
+  @player.update(:is_ready => false)
   'OK'
 end
 
@@ -116,9 +145,12 @@ get '/player/dobon' do
   'OK'
 end
 
+get '/player/test' do
+  "#{@player.is_ready}"
+end
+
 ## Views
 get '/' do
-  #r = Models::Room.filter(:is_closed => false).map{|e| e.name }
-  #r.join('<br>')
-  'top'
+  r = Models::Room.filter(:is_closed => false).map{|e| e.name }
+  r.join('<br>') + '<br>' + session[:sessionkey]
 end

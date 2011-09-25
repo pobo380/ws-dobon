@@ -55,7 +55,9 @@ Sequel.migration do
 
       String    :name, :text => true
       String    :hand, :text => true
+      String    :sessionkey, :text => true
       TrueClass :is_ready
+      TrueClass :is_active
       DateTime :created_at
     end
 
