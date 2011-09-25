@@ -17,16 +17,6 @@ Sequel.migration do
       DateTime :created_at
     end
 
-    ## create table for Model::Round
-    create_table :rounds do
-      primary_key :id
-      foreign_key :game_id, :games
-      foreign_key :winner_id, :players
-      foreign_key :loser_id,  :players
-
-      DateTime :created_at
-    end
-
     ## create table for Model::Player
     create_table :players do
       primary_key :id
@@ -37,6 +27,16 @@ Sequel.migration do
       String    :sessionkey, :text => true
       TrueClass :is_ready
       TrueClass :is_active
+      DateTime :created_at
+    end
+
+    ## create table for Model::Round
+    create_table :rounds do
+      primary_key :id
+      foreign_key :game_id, :games
+      foreign_key :winner_id, :players
+      foreign_key :loser_id,  :players
+
       DateTime :created_at
     end
 
