@@ -60,6 +60,7 @@ module Models
   class RoundResult < Sequel::Model
     many_to_one :round
     many_to_one :player
+    many_to_one :finish_types
 
     include AutoTimestamp
   end
@@ -71,6 +72,12 @@ module Models
     one_to_many :game_results
 
     many_to_one :room
+
+    include AutoTimestamp
+  end
+
+  class FinishType < Sequel::Model
+    one_to_many :round_results
 
     include AutoTimestamp
   end
