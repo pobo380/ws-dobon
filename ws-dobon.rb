@@ -152,6 +152,7 @@ end
 ## Views
 get '/' do
   r = Models::Room.filter(:is_closed => false).map{|e| e.name }
-  #r.join('<br>') + '<br>' + session[:sessionkey]
-  'TOPです'
+  r.join('<br>')
+  ## + '<br>' + session[:sessionkey]
+  #'TOPです'
 end
