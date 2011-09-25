@@ -76,9 +76,37 @@ module Models
   end
 end
 
-
 ### Routes
-#
+
+## APIs
+
+get 'room/create' do
+  #room = Models::Room.create(
+  #  :name => params[:name],
+  #  :is_closed => false
+  #)
+
+  'OK'
+end
+
+get 'room/join' do
+end
+
+get 'room/quit' do
+end
+
+get 'player/ready' do
+end
+
+get 'player/play' do
+end
+
+get 'player/dobon' do
+end
+
+## Views
 get '/' do
-  '日本語'
+  #r = Models::Room.filter(:is_closed => false).map{|e| e.name }
+  #r.join('<br>')
+  'top'
 end
