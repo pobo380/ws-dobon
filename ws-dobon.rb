@@ -2,5 +2,5 @@ require 'rubygems'
 require 'sinatra'
 
 get '/' do
-  'HerokuでSinatraを使ってHello World!!'
+  'HerokuでSinatraを使ってHello world!'''
 end
