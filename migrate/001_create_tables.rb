@@ -37,17 +37,6 @@ Sequel.migration do
       DateTime :created_at
     end
 
-    ## create table for Model::RoundResult
-    create_table :round_results do
-      primary_key :id
-      foreign_key :round_id, :rounds
-      foreign_key :player_id, :players
-      foreign_key :finish_type_id, :finish_types
-
-      Integer :point
-      DateTime :created_at
-    end
-
     ## create table for Model::Player
     create_table :players do
       primary_key :id
@@ -66,6 +55,17 @@ Sequel.migration do
       primary_key :id
 
       String :label, :text => true
+      DateTime :created_at
+    end
+
+    ## create table for Model::RoundResult
+    create_table :round_results do
+      primary_key :id
+      foreign_key :round_id, :rounds
+      foreign_key :player_id, :players
+      foreign_key :finish_type_id, :finish_types
+
+      Integer :point
       DateTime :created_at
     end
   end
