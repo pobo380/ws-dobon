@@ -1,2 +1,2 @@
-sorce :rubygems
+source :rubygems
 gem 'sinatra'
