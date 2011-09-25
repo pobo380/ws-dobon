@@ -1,0 +1,2 @@
+sorce :rubygems
+gem 'sinatra'
