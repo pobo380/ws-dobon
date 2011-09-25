@@ -89,19 +89,24 @@ get 'room/create' do
   'OK'
 end
 
-get 'room/join' do
+get '/room/join' do
+  'OK'
 end
 
-get 'room/quit' do
+get '/room/quit' do
+  'OK'
 end
 
-get 'player/ready' do
+get '/player/ready' do
+  'OK'
 end
 
-get 'player/play' do
+get '/player/play' do
+  'OK'
 end
 
-get 'player/dobon' do
+get '/player/dobon' do
+  'OK'
 end
 
 ## Views
