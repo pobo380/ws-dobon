@@ -1,2 +1,2 @@
-require 'ws-dobon'
+require './ws-dobon'
 run Sinatra::Application
