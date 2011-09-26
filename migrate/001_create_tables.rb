@@ -1,5 +1,29 @@
 Sequel.migration do
   up do
+    ## create table for Model::FinishType
+    create_table :finish_types do
+      primary_key :id
+
+      String :label, :text => true
+      DateTime :created_at
+    end
+
+    ## create table for Model::PlayerState
+    create_table :player_states do
+      primary_key :id
+
+      String :label, :text => true
+      DateTime :created_at
+    end
+
+    ## create table for Models::RoundState
+    create_table :round_states do
+      primary_key :id
+
+      String :label, :text => true
+      DateTime :created_at
+    end
+
     ## create table for Model::Room
     create_table :rooms do
       primary_key :id
@@ -21,12 +45,11 @@ Sequel.migration do
     create_table :players do
       primary_key :id
       foreign_key :room_id, :rooms
+      foreign_key :player_state_id, :player_states
 
       String    :name, :text => true
       String    :hand, :text => true
       String    :sessionkey, :text => true
-      TrueClass :is_ready
-      TrueClass :is_active
       DateTime :created_at
     end
 
@@ -36,15 +59,13 @@ Sequel.migration do
       foreign_key :game_id, :games
       foreign_key :winner_id, :players
       foreign_key :loser_id,  :players
+      foreign_key :current_player_id, :players
+      foreign_key :round_state_id, :round_states
 
-      DateTime :created_at
-    end
+      String :deck,     :text => true
+      String :played,   :text => true
+      String :discards, :text => true
 
-    ## create table for Model::FinishType
-    create_table :finish_types do
-      primary_key :id
-
-      String :label, :text => true
       DateTime :created_at
     end
 
