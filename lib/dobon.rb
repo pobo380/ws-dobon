@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-#
+require 'lib/playingcard'
+
 module Dobon
   class Game
     def run

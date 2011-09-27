@@ -114,6 +114,16 @@ module Models
   end
 end
 
+### Helpers
+helpers do
+  def response_code(message)
+  end
+
+  def game_started?(room)
+    return (not room.games.empty? and room.games.last.game_results.empty?)
+  end
+end
+
 ### Routes
 include Models
 
@@ -154,6 +164,12 @@ get '/player/join' do
   return '["NG", "プレイヤーの名前を入力して下さい。"]' unless params[:name]
   return '["NG", "部屋を指定して下さい。"]' unless params[:room_id]
 
+  room = Room.find(:room_id => params[:room_id])
+
+  return '["NG", "存在しない部屋です"]' unless room.nil?
+  return '["NG", "部屋が既に閉じています"]' if room.is_closed
+  return '["NG", "既にゲームが開始しています。"]' if game_started?(room)
+
   player = Player.find(:sessionkey => session[:sessionkey])
 
   DB.transaction do
@@ -180,7 +196,7 @@ get '/player/ready' do
 
   if @player.room.players.size > 0 and # N人以上で
      @player.room.players.all?{|player| player.player_state.label == 'ready' } and
-     (@player.room.games.empty? or not @player.room.games.last.game_results.empty?)
+     not game_started?(@player.room)
 
     ## ゲーム開始
     DB.transaction do
