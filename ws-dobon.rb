@@ -282,37 +282,28 @@ get '/player/not-ready' do
   "[OK, #{@player.player_state.label}]"
 end
 
-### カードを場に出す
-get '/player/play' do
-  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
+### Action API エラーチェックフィルタ
+before '/player/action/*' do
+  halt '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
   current_player = @player.room.games.last.rounds.last.tables.first.current_player
   unless current_player.id == @player.id
-    return '["NG", "貴方の手番ではありません。"]'
+    halt '["NG", "貴方の手番ではありません。"]'
   end
+end
 
+### カードを場に出す
+get '/player/action/play' do
   '["OK"]'
 end
 
 ### パスする
-get '/player/pass' do
-  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
-  current_player = @player.room.games.last.rounds.last.tables.first.current_player
-  unless current_player.id == @player.id
-    return '["NG", "貴方の手番ではありません。"]'
-  end
-
-  'OK'
+get '/player/action/pass' do
+  '["OK"]'
 end
 
 ### ドボンする
-get '/player/dobon' do
-  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
-  current_player = @player.room.games.last.rounds.last.tables.first.current_player
-  unless current_player.id == @player.id
-    return '["NG", "貴方の手番ではありません。"]'
-  end
-
-  'OK'
+get '/player/action/dobon' do
+  '["OK"]'
 end
 
 ## Views
