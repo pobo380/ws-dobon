@@ -59,16 +59,16 @@ Sequel.migration do
       foreign_key :game_id, :games
       foreign_key :winner_id, :players
       foreign_key :loser_id,  :players
-      foreign_key :current_player_id, :players
       foreign_key :round_state_id, :round_states
 
       DateTime :created_at
     end
 
-    ## create table for Model::Round
+    ## create table for Model::Table
     create_table :tables do
       primary_key :id
       foreign_key :round_id, :rounds
+      foreign_key :current_player_id, :players
 
       String :deck,     :text => true
       String :discards, :text => true
@@ -98,6 +98,16 @@ Sequel.migration do
       foreign_key :finish_type_id, :finish_types
 
       Integer :point
+      DateTime :created_at
+    end
+
+    ## create table for Model::PlayingOrder
+    create_table :playing_orders do
+      primary_key :key
+      foreign_key :player_id, :players
+      foreign_key :game_id, :games
+      
+      Integer :order
       DateTime :created_at
     end
   end

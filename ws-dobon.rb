@@ -39,6 +39,7 @@ module Models
   class Game < Sequel::Model
     one_to_many :rounds
     one_to_many :game_results
+    one_to_many :playing_orders
 
     many_to_one :room
 
@@ -58,8 +59,6 @@ module Models
     many_to_one :game
     many_to_one :winner, :class => :Player
     many_to_one :loser,  :class => :Player
-    many_to_one :current_player,
-                         :class => :Player
     many_to_one :round_state
 
     one_to_many :tables
@@ -69,6 +68,7 @@ module Models
 
   class Table < Sequel::Model
     many_to_one :round
+    many_to_one :current_player, :class => :Player
 
     include AutoTimestamp
   end
@@ -85,10 +85,9 @@ module Models
     one_to_many :round_results
     one_to_many :winner_rounds, :class => :Round, :key => :winner_id
     one_to_many :loser_rounds,  :class => :Round, :key => :loser_id
-    one_to_many :current_player_rounds,
-                                :class => :Round,
-                                :key => :current_player_id
+    one_to_many :current_player_tables, :class => :Table, :key => :current_player_id
     one_to_many :game_results
+    one_to_many :playing_orders
 
     many_to_one :room
     many_to_one :player_state
@@ -111,6 +110,13 @@ module Models
   class RoundState < Sequel::Model
     one_to_many :rounds
     
+    include AutoTimestamp
+  end
+
+  class PlayingOrder < Sequel::Model
+    many_to_one :player
+    many_to_one :game
+
     include AutoTimestamp
   end
 end
@@ -148,14 +154,6 @@ get '/room/create' do
   end
 
   '["OK", "部屋を作成しました"]'
-end
-
-get '/room/quit' do
-  ## ゲーム中でないか
-  #
-  ## プレイヤーの退出処理
-  #
-  ## 人数が0であれば部屋を閉じる
 end
 
 ## ログイン状態であるかのフィルタ
@@ -198,36 +196,61 @@ get '/player/join' do
   '["OK"]'
 end
 
+## 部屋からの退出
+get '/player/quit' do
+  return '["NG", "ゲーム中は退出出来ません。"]' if game_started?(@player.room)
+
+  ### プレイヤーをinactiveに
+  DB.transaction do
+    PlayerState.find(:label => 'inactive').add_player(@player)
+  end
+  session[:sessionkey] = ''
+
+  ### プレイヤー数が0であれば部屋を閉じる
+  if @player.room.players.all?{|player| player.player_state.label == 'inactive'}
+    DB.transaction do
+      @player.room.update(:is_closed => true)
+    end
+  end
+end
+
+## 準備完了
 get '/player/ready' do
   return '["NG", "プレイヤー登録を行なって下さい。"]' if @player.nil?
+  return '["NG", "既にゲームが開始しています。"]' if game_started?(@player.room)
 
   DB.transaction do
     PlayerState.find(:label => 'ready').add_player(@player)
   end
 
   if @player.room.players.size > 0 and # N人以上で
-     @player.room.players.all?{|player| player.player_state.label == 'ready' } and
-     not game_started?(@player.room)
+     @player.room.players.all?{|player| player.player_state.label == 'ready' }
 
     ## ゲーム開始
     DB.transaction do
+      ## ゲームをテーブルに追加
+      game  = @player.room.add_game({})
+
       ## テーブルの生成
       table = Dobon::Table.new(Playingcard::Deck.new_1set)
       table.reset
 
       ## プレイ順の決定
       players = @player.room.players.sort_by{rand}
-      #players.each.with_index do |player, idx|
-      #  PlayingOrder
-      #end
+      orders = players.map.with_index do |player, idx|
+        order = PlayingOrder.create(:order => idx)
+        player.add_playing_order(order)
+        player.room.games.last.add_playing_order(order)
+        order
+      end
 
       ## 手札を配る
       players.map do |player|
-        hand = Array.new(5){ table.draw }.to_s
+        hand = Playingcard::Deck.new(Array.new(5){ table.draw.to_s }).to_s
         player.update(:hand => hand)
       end
 
-      game  = @player.room.add_game({})
+      ## ラウンドをテーブルに追加
       round = game.add_round({})
       round.add_table(
         :deck => table.deck.to_s,
@@ -235,7 +258,8 @@ get '/player/ready' do
         :specify => table.specify,
         :reverse => table.reverse,
         :restriction => table.restriction,
-        :attack => table.attack.to_s
+        :attack => table.attack.to_s,
+        :current_player_id => orders.sort_by{|e|e.order}.first.player.id
       )
       RoundState.find(:label => 'wait-to-play').add_round(round)
     end
@@ -246,8 +270,10 @@ get '/player/ready' do
   end
 end
 
+### 準備未完了
 get '/player/not-ready' do
   return '["NG", "プレイヤー登録を行なって下さい。"]' if @player.nil?
+  return '["NG", "既にゲームが開始しています。"]' if game_started?(@player.room)
 
   DB.transaction do
     PlayerState.find(:label => 'not-ready').add_player(@player)
@@ -256,16 +282,37 @@ get '/player/not-ready' do
   "[OK, #{@player.player_state.label}]"
 end
 
+### カードを場に出す
 get '/player/play' do
+  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
+  current_player = @player.room.games.last.rounds.last.tables.first.current_player
+  unless current_player.id == @player.id
+    return '["NG", "貴方の手番ではありません。"]'
+  end
+
+  '["OK"]'
+end
+
+### パスする
+get '/player/pass' do
+  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
+  current_player = @player.room.games.last.rounds.last.tables.first.current_player
+  unless current_player.id == @player.id
+    return '["NG", "貴方の手番ではありません。"]'
+  end
+
   'OK'
 end
 
+### ドボンする
 get '/player/dobon' do
-  'OK'
-end
+  return '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
+  current_player = @player.room.games.last.rounds.last.tables.first.current_player
+  unless current_player.id == @player.id
+    return '["NG", "貴方の手番ではありません。"]'
+  end
 
-get '/player/test' do
-  "#{@player.is_ready}"
+  'OK'
 end
 
 ## Views

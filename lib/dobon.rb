@@ -148,9 +148,6 @@ module Dobon
       @restriction = restriction
       @specify = specify
       @attack = attack
-
-      class << @deck
-      end
     end
     attr_reader :deck, :discards, :attack, :specify, :restriction, :reverse
 
@@ -207,9 +204,9 @@ module Dobon
         @specify = specify
       end
       # debug print
-      p ['attack', @attack].join(' ')
-      p ['restriction', @restriction].join(' ')
-      p ['specify', @specify].join(' ')
+      p ['attack:', @attack].join(' ')
+      p ['restriction:', @restriction].join(' ')
+      p ['specify:', @specify].join(' ')
     end
 
     def pass
