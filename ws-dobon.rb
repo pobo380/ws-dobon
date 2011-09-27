@@ -123,7 +123,12 @@ end
 
 ### Helpers
 helpers do
-  def response_code(message)
+  def halt_ng(message)
+    halt ['NG', message].to_s
+  end
+
+  def return_ok(message)
+    ['OK', message].to_s
   end
 
   def table_model_to_logic(table)
@@ -147,13 +152,13 @@ include Models
 ## APIs
 
 get '/room/create' do
-  return '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
+  halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
 
   DB.transaction do
     room = Room.create(:name => params[:name], :is_closed => false)
   end
 
-  '["OK", "部屋を作成しました"]'
+  return_ok "部屋を作成しました"
 end
 
 ## ログイン状態であるかのフィルタ
@@ -169,15 +174,15 @@ end
 
 ## 部屋への参加
 get '/player/join' do
-  return '["NG", "既にプレイヤー登録している部屋があります。"]' unless @player.nil?
-  return '["NG", "プレイヤーの名前を入力して下さい。"]' unless params[:name]
-  return '["NG", "部屋を指定して下さい。"]' unless params[:room_id]
+  halt_ng "既にプレイヤー登録している部屋があります。" unless @player.nil?
+  halt_ng "プレイヤーの名前を入力して下さい。" unless params[:name]
+  halt_ng "部屋を指定して下さい。" unless params[:room_id]
 
   room = Room.find(:id => params[:room_id])
 
-  return '["NG", "存在しない部屋IDです"]' if room.nil?
-  return '["NG", "部屋が既に閉じています"]' if room.is_closed
-  return '["NG", "既にゲームが開始しています。"]' if game_started?(room)
+  halt_ng "存在しない部屋IDです" if room.nil?
+  halt_ng "部屋が既に閉じています" if room.is_closed
+  halt_ng "既にゲームが開始しています。" if game_started?(room)
 
   player = Player.find(:sessionkey => session[:sessionkey])
 
@@ -193,12 +198,12 @@ get '/player/join' do
     session[:sessionkey] = player.sessionkey
   end
 
-  '["OK"]'
+  return_ok ""
 end
 
 ## 部屋からの退出
 get '/player/quit' do
-  return '["NG", "ゲーム中は退出出来ません。"]' if game_started?(@player.room)
+  halt_ng "ゲーム中は退出出来ません。" if game_started?(@player.room)
 
   ### プレイヤーをinactiveに
   DB.transaction do
@@ -212,12 +217,14 @@ get '/player/quit' do
       @player.room.update(:is_closed => true)
     end
   end
+
+  return_ok ""
 end
 
 ## 準備完了
 get '/player/ready' do
-  return '["NG", "プレイヤー登録を行なって下さい。"]' if @player.nil?
-  return '["NG", "既にゲームが開始しています。"]' if game_started?(@player.room)
+  halt_ng "プレイヤー登録を行なって下さい。" if @player.nil?
+  halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
     PlayerState.find(:label => 'ready').add_player(@player)
@@ -264,46 +271,51 @@ get '/player/ready' do
       RoundState.find(:label => 'wait-to-play').add_round(round)
     end
 
-    "[OK, #{@player.room.games.empty?}, all-players-ready]"
+    return_ok "all-players-ready"
   else
-    "[OK, #{@player.player_state.label}]"
+    return_ok "#{@player.player_state.label}"
   end
 end
 
 ### 準備未完了
 get '/player/not-ready' do
-  return '["NG", "プレイヤー登録を行なって下さい。"]' if @player.nil?
-  return '["NG", "既にゲームが開始しています。"]' if game_started?(@player.room)
+  halt_ng "プレイヤー登録を行なって下さい。" if @player.nil?
+  halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
     PlayerState.find(:label => 'not-ready').add_player(@player)
   end
 
-  "[OK, #{@player.player_state.label}]"
+  return_ok "#{@player.player_state.label}"
 end
 
 ### Action API エラーチェックフィルタ
 before '/player/action/*' do
-  halt '["NG", "ゲームが開始されていません。"]' unless game_started?(@player.room)
+  halt_ng "ゲームが開始されていません。" unless game_started?(@player.room)
   current_player = @player.room.games.last.rounds.last.tables.first.current_player
   unless current_player.id == @player.id
-    halt '["NG", "貴方の手番ではありません。"]'
+    halt_ng "貴方の手番ではありません。"
   end
 end
 
 ### カードを場に出す
 get '/player/action/play' do
-  '["OK"]'
+  ## エラーチェック
+  halt_ng ''
+  
+  #Playingcard::Deck.new(@player.hand).include?(params[:card])
+
+  return_ok ''
 end
 
 ### パスする
 get '/player/action/pass' do
-  '["OK"]'
+  return_ok ''
 end
 
 ### ドボンする
 get '/player/action/dobon' do
-  '["OK"]'
+  return_ok ''
 end
 
 ## Views
