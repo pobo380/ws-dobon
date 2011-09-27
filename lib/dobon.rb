@@ -137,17 +137,22 @@ module Dobon
   end
 
   class Table
-    def initialize(deck, discards,
+    def initialize(deck, discards = Playingcard::Deck.new,
                    restriction = false,
+                   reverse = false,
                    specify = nil,
                    attack = 0)
       @deck = deck
       @discards = discards
+      @reverse = reverse
       @restriction = restriction
       @specify = specify
       @attack = attack
+
+      class << @deck
+      end
     end
-    attr_reader :attack, :specify, :restriction
+    attr_reader :deck, :discards, :attack, :specify, :restriction, :reverse
 
     def top
       @discards.last
@@ -194,6 +199,8 @@ module Dobon
         @attack = 0
         @restriction = false
         @specify = specify
+      when 13
+        @reverse = !@reverse
       when 14
         @attack = @attack + 4
         @restriction = true

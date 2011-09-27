@@ -3,6 +3,7 @@ require 'rubygems'
 require 'sequel'
 require 'sinatra'
 require 'digest/sha2'
+require 'enumerator'
 
 $:.unshift(File.expand_path(File.dirname(__FILE__)))
 require 'lib/dobon'
@@ -119,6 +120,16 @@ helpers do
   def response_code(message)
   end
 
+  def table_model_to_logic(table)
+      Dobon::Table.new(
+        Playingcard::Deck.new(table.deck),
+        Playingcard::Deck.new(table.discards),
+        table.restriction,
+        table.specify,
+        table.attack
+      )
+  end
+
   def game_started?(room)
     return (not room.games.empty? and room.games.last.game_results.empty?)
   end
@@ -164,9 +175,9 @@ get '/player/join' do
   return '["NG", "プレイヤーの名前を入力して下さい。"]' unless params[:name]
   return '["NG", "部屋を指定して下さい。"]' unless params[:room_id]
 
-  room = Room.find(:room_id => params[:room_id])
+  room = Room.find(:id => params[:room_id])
 
-  return '["NG", "存在しない部屋です"]' unless room.nil?
+  return '["NG", "存在しない部屋IDです"]' if room.nil?
   return '["NG", "部屋が既に閉じています"]' if room.is_closed
   return '["NG", "既にゲームが開始しています。"]' if game_started?(room)
 
@@ -200,16 +211,33 @@ get '/player/ready' do
 
     ## ゲーム開始
     DB.transaction do
+      ## テーブルの生成
+      table = Dobon::Table.new(Playingcard::Deck.new_1set)
+      table.reset
+
+      ## プレイ順の決定
+      players = @player.room.players.sort_by{rand}
+      #players.each.with_index do |player, idx|
+      #  PlayingOrder
+      #end
+
+      ## 手札を配る
+      players.map do |player|
+        hand = Array.new(5){ table.draw }.to_s
+        player.update(:hand => hand)
+      end
+
       game  = @player.room.add_game({})
       round = game.add_round({})
-      table = round.add_table(
-        :deck => Playingcard::Deck.new_1set.to_s,
-        :discards => "",
-        :specify => "",
-        :reverse => false,
-        :restriction => false,
-        :attack => "0"
+      round.add_table(
+        :deck => table.deck.to_s,
+        :discards => table.discards.to_s,
+        :specify => table.specify,
+        :reverse => table.reverse,
+        :restriction => table.restriction,
+        :attack => table.attack.to_s
       )
+      RoundState.find(:label => 'wait-to-play').add_round(round)
     end
 
     "[OK, #{@player.room.games.empty?}, all-players-ready]"
