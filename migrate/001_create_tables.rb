@@ -62,9 +62,20 @@ Sequel.migration do
       foreign_key :current_player_id, :players
       foreign_key :round_state_id, :round_states
 
+      DateTime :created_at
+    end
+
+    ## create table for Model::Round
+    create_table :tables do
+      primary_key :id
+      foreign_key :round_id, :rounds
+
       String :deck,     :text => true
-      String :played,   :text => true
       String :discards, :text => true
+      String :specify,  :text => true
+      TrueClass :reverse
+      TrueClass :restriction
+      Integer :attack
 
       DateTime :created_at
     end

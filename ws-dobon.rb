@@ -4,6 +4,9 @@ require 'sequel'
 require 'sinatra'
 require 'digest/sha2'
 
+$:.unshift(File.expand_path(File.dirname(__FILE__)))
+require 'lib/dobon'
+
 ### Configs
 
 use Rack::Session::Cookie,
@@ -57,6 +60,14 @@ module Models
     many_to_one :current_player,
                          :class => :Player
     many_to_one :round_state
+
+    one_to_many :tables
+
+    include AutoTimestamp
+  end
+
+  class Table < Sequel::Model
+    many_to_one :round
 
     include AutoTimestamp
   end
@@ -167,16 +178,21 @@ get '/player/ready' do
     PlayerState.find(:label => 'ready').add_player(@player)
   end
 
-  if @player.room.players.all?{|player| player.player_state.label == 'ready' } and
-      (@player.room.games.empty? or not @player.room.games.last.game_results.empty?)
+  if @player.room.players.size > 0 and # N人以上で
+     @player.room.players.all?{|player| player.player_state.label == 'ready' } and
+     (@player.room.games.empty? or not @player.room.games.last.game_results.empty?)
 
     ## ゲーム開始
     DB.transaction do
-      game = @player.room.add_game({})
-      game.add_round(
-        :deck => "",
-        :played => "",
-        :discards => ""
+      game  = @player.room.add_game({})
+      round = game.add_round({})
+      table = round.add_table(
+        :deck => Playingcard::Deck.new_1set.to_s,
+        :discards => "",
+        :specify => "",
+        :reverse => false,
+        :restriction => false,
+        :attack => "0"
       )
     end
 
@@ -217,3 +233,4 @@ end
 get '/test' do
   session[:sessionkey]
 end
+
