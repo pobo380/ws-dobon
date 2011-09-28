@@ -179,16 +179,19 @@ module Dobon
 
       if card.number == self.top.number || card.suit == self.top.suit || card.joker? || self.top.joker? || card.number == 11 || @specify then
         @discards.push(card)
+        @passed = false
         self.ruling(specify)
-        true
       else
         nil
       end
     end
 
     def ruling(specify=nil)
+      skip = false
       @specify = nil
       case self.top.number
+      when 1
+        skip = true
       when 2
         @attack = @attack + 2
         @restriction = true
@@ -210,6 +213,8 @@ module Dobon
       p ['attack:', @attack].join(' ')
       p ['restriction:', @restriction].join(' ')
       p ['specify:', @specify].join(' ')
+
+      skip
     end
 
     def pass
@@ -218,6 +223,7 @@ module Dobon
 
       @attack = 0
       @restriction = false
+      @passed = true
 
       [attack, next_turn]
     end
@@ -227,8 +233,9 @@ module Dobon
       @deck.concat(@discards)
       @discards.clear
       @discards.push(@deck.pop)
-      self.ruling
+      skip = self.ruling
       @deck.shuffle
+      skip
     end
   end
 

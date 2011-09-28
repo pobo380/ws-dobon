@@ -143,8 +143,18 @@ helpers do
       )
   end
 
+  ### ゲームが開始されているかどうか。
   def game_started?(room)
     return (not room.games.empty? and room.games.last.game_results.empty?)
+  end
+
+  ### 次のプレイヤーを取得
+  def next_player(times = 1)
+    orders = @game.playing_orders_dataset.order(:order)
+    current_idx = orders[:player_id => @table.current_player.id].order
+    @table.reverse ? idc = @player.room.players.size - times : idc = times
+    next_idx = (current_idx + idc) % @player.room.players.size
+    orders[:order => next_idx].player
   end
 end
 
@@ -243,7 +253,7 @@ get '/player/ready' do
 
       ## テーブルの生成
       table = Dobon::Table.new(Playingcard::Deck.new_1set)
-      table.reset
+      skip = table.reset
 
       ## プレイ順の決定
       players = @player.room.players.sort_by{rand}
@@ -262,7 +272,7 @@ get '/player/ready' do
 
       ## ラウンドをテーブルに追加
       round = game.add_round({})
-      round.add_table(
+      table = round.add_table(
         :deck => table.deck.to_s,
         :discards => table.discards.to_s,
         :specify => table.specify,
@@ -273,6 +283,7 @@ get '/player/ready' do
         :current_player_id => orders.sort_by{|e|e.order}.first.player.id
       )
       RoundState.find(:label => 'wait-to-play').add_round(round)
+      table.update(:current_player_id => next_player.id) if skip
     end
 
     return_ok "all-players-ready"
@@ -324,17 +335,23 @@ get '/player/action/play' do
   table = table_model_to_logic(@table)
 
   res = table.put(card, params[:specify])
-  unless res
+  if res.nil?
     halt_ng 'プレイすることのできないカードであるか、スートが指定されていません。'
   end
 
-  orders = @game.playing_orders_dataset.order(:order)
-  #if @table.reverse
-  #  card.number == 1
-  #else
-  #end
-
   DB.transaction do
+    @player.update(:hand => hand.to_s)
+    @table.update(
+      :deck => table.deck.to_s,
+      :discards => table.discards.to_s,
+      :specify => table.specify,
+      :restriction => table.restriction,
+      :reverse => table.reverse,
+      :passed => table.passed,
+      :attack => table.attack.to_s,
+      :current_player_id => next_player(res ? 2 : 1).id,
+      :last_played_time => Time.now.to_s
+    )
   end
 
   return_ok ''
@@ -342,6 +359,11 @@ end
 
 ### パスする
 get '/player/action/pass' do
+  DB.transaction do
+    @table.update(
+      :current_player_id => next_player(1).id
+    )
+  end
   return_ok ''
 end
 
@@ -357,6 +379,5 @@ get '/' do
 end
 
 get '/test' do
-  #Room.filter(:is_closed => false).map{|e| e.created_at.class.to_s }
 end
 
