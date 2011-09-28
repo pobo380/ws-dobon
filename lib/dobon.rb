@@ -140,16 +140,19 @@ module Dobon
     def initialize(deck, discards = Playingcard::Deck.new,
                    restriction = false,
                    reverse = false,
+                   passed = true,
                    specify = nil,
                    attack = 0)
       @deck = deck
       @discards = discards
       @reverse = reverse
+      @passed = passed
       @restriction = restriction
       @specify = specify
       @attack = attack
     end
-    attr_reader :deck, :discards, :attack, :specify, :restriction, :reverse
+    attr_reader :deck, :discards, :attack, :specify
+    attr_reader :restriction, :reverse, :passed
 
     def top
       @discards.last

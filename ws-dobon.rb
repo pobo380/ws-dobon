@@ -136,6 +136,8 @@ helpers do
         Playingcard::Deck.new(table.deck),
         Playingcard::Deck.new(table.discards),
         table.restriction,
+        table.reverse,
+        table.passed,
         table.specify,
         table.attack
       )
@@ -203,6 +205,7 @@ end
 
 ## 部屋からの退出
 get '/player/quit' do
+  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
   halt_ng "ゲーム中は退出出来ません。" if game_started?(@player.room)
 
   ### プレイヤーをinactiveに
@@ -223,7 +226,7 @@ end
 
 ## 準備完了
 get '/player/ready' do
-  halt_ng "プレイヤー登録を行なって下さい。" if @player.nil?
+  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
   halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
@@ -263,8 +266,9 @@ get '/player/ready' do
         :deck => table.deck.to_s,
         :discards => table.discards.to_s,
         :specify => table.specify,
-        :reverse => table.reverse,
         :restriction => table.restriction,
+        :reverse => table.reverse,
+        :passed => table.passed,
         :attack => table.attack.to_s,
         :current_player_id => orders.sort_by{|e|e.order}.first.player.id
       )
@@ -279,7 +283,7 @@ end
 
 ### 準備未完了
 get '/player/not-ready' do
-  halt_ng "プレイヤー登録を行なって下さい。" if @player.nil?
+  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
   halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
@@ -289,21 +293,49 @@ get '/player/not-ready' do
   return_ok "#{@player.player_state.label}"
 end
 
-### Action API エラーチェックフィルタ
+### Action API フィルタ
 before '/player/action/*' do
+  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
   halt_ng "ゲームが開始されていません。" unless game_started?(@player.room)
   current_player = @player.room.games.last.rounds.last.tables.first.current_player
   unless current_player.id == @player.id
     halt_ng "貴方の手番ではありません。"
   end
+
+  @game  = @player.room.games.last
+  @round = @game.rounds.last
+  @table = @round.tables.first
 end
 
 ### カードを場に出す
 get '/player/action/play' do
   ## エラーチェック
-  halt_ng ''
-  
-  #Playingcard::Deck.new(@player.hand).include?(params[:card])
+  halt_ng 'カードを指定して下さい。' unless params[:card]
+
+  card = Playingcard::Card.new(params[:card])
+  halt_ng '不正なカードの値です。' unless card.valid?
+
+  hand = Playingcard::Deck.new(@player.hand)
+  unless hand.include?(card)
+    halt_ng '指定されたカードが手札にありません。'
+  end
+  hand.delete(card)
+
+  table = table_model_to_logic(@table)
+
+  res = table.put(card, params[:specify])
+  unless res
+    halt_ng 'プレイすることのできないカードであるか、スートが指定されていません。'
+  end
+
+  orders = @game.playing_orders_dataset.order(:order)
+  #if @table.reverse
+  #  card.number == 1
+  #else
+  #end
+
+  DB.transaction do
+  end
 
   return_ok ''
 end
@@ -325,6 +357,6 @@ get '/' do
 end
 
 get '/test' do
-  session[:sessionkey]
+  #Room.filter(:is_closed => false).map{|e| e.created_at.class.to_s }
 end
 

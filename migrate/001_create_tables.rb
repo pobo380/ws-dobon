@@ -74,9 +74,11 @@ Sequel.migration do
       String :discards, :text => true
       String :specify,  :text => true
       TrueClass :reverse
+      TrueClass :passed
       TrueClass :restriction
       Integer :attack
 
+      DateTime :last_played_time
       DateTime :created_at
     end
 
