@@ -327,6 +327,10 @@ get '/player/action/play' do
     halt_ng "貴方の手番ではありません。"
   end
 
+  if Time.now - @table.last_played_time <= 2.0
+    halt_ng "ドボン待ち時間です。"
+  end
+
   halt_ng 'カードを指定して下さい。' unless params[:card]
 
   card = Playingcard::Card.new(params[:card])
@@ -354,6 +358,7 @@ get '/player/action/play' do
       :passed => table.passed,
       :attack => table.attack.to_s,
       :current_player_id => next_player(res ? 2 : 1).id,
+      :last_played_id => @player.id,
       :last_played_time => Time.now.to_s
     )
     RoundState.find(:label => 'wait-to-dobon')
@@ -405,22 +410,6 @@ end
 
 ### ドボンする
 get '/player/action/dobon' do
-end
-
-### ドボンなし
-get '/player/action/no-dobon' do
-  unless @round.round_state.label == 'wait-to-dobon'
-    halt_ng "ドボン待ち状態ではありません。"
-  end
-
-  if Time.now - @table.last_played_time <= 2.0
-    halt_ng "ドボン待ち時間です。"
-  end
-
-  DB.transaction do
-  end
-
-  return_ok ''
 end
 
 ## Views
