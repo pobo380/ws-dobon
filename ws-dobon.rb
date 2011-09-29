@@ -3,6 +3,7 @@ require 'rubygems'
 require 'sequel'
 require 'sinatra'
 require 'digest/sha2'
+require 'time'
 require 'enumerator'
 
 $:.unshift(File.expand_path(File.dirname(__FILE__)))
@@ -386,7 +387,7 @@ get '/player/action/pass' do
     )
     if next_turn
       @table.update(:current_player_id =>
-                      next_player(next_turn ? 2 : 1).id)
+                      next_player(1).id)
     end
 
     RoundState.find(:label => 'wait-to-dobon')
@@ -403,6 +404,13 @@ end
 
 ### ドボンなし
 get '/player/action/no-dobon' do
+  unless @round.round_state.label == 'wait-to-dobon'
+    halt_ng "ドボン待ち状態ではありません。"
+  end
+
+  if Time.now - @table.last_played_time <= 5.0
+    halt_ng "ドボン待ち時間です。"
+  end
 
   DB.transaction do
   end
