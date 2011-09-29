@@ -166,6 +166,15 @@ helpers do
   end
 
   def player_not_registered
+    halt_ng "既にプレイヤー登録している部屋があります。" unless @player.nil?
+  end
+
+  def game_started
+    halt_ng "ゲームが開始されていません。" unless game_started?(@room)
+  end
+
+  def game_not_started
+    halt_ng "既にゲームが開始しています。" if game_started?(@room)
   end
 
   ### ゲームが開始されているかどうか。
@@ -206,20 +215,23 @@ before '/player/*' do
   if session[:sessionkey].nil? or @player.nil? or @player.room.is_closed
     @player = nil
     session[:sessionkey] = ''
+  else
+    @room = @player.room
   end 
+
 end
 
 ## 部屋への参加
 get '/player/join' do
-  halt_ng "既にプレイヤー登録している部屋があります。" unless @player.nil?
+  player_not_registered
   halt_ng "プレイヤーの名前を入力して下さい。" unless params[:name]
   halt_ng "部屋を指定して下さい。" unless params[:room_id]
 
-  room = Room.find(:id => params[:room_id])
+  @room = Room.find(:id => params[:room_id])
 
-  halt_ng "存在しない部屋IDです" if room.nil?
-  halt_ng "部屋が既に閉じています" if room.is_closed
-  halt_ng "既にゲームが開始しています。" if game_started?(room)
+  halt_ng "存在しない部屋IDです" if @room.nil?
+  halt_ng "部屋が既に閉じています" if @room.is_closed
+  game_not_started
 
   player = Player.find(:sessionkey => session[:sessionkey])
 
@@ -241,7 +253,7 @@ end
 ## 部屋からの退出
 get '/player/quit' do
   player_registered
-  halt_ng "ゲーム中は退出出来ません。" if game_started?(@player.room)
+  game_not_started
 
   ### プレイヤーをinactiveに
   DB.transaction do
@@ -262,7 +274,7 @@ end
 ## 準備完了
 get '/player/ready' do
   player_registered
-  halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
+  game_not_started
 
   DB.transaction do
     PlayerState.find(:label => 'ready').add_player(@player)
@@ -320,7 +332,7 @@ end
 ### 準備未完了
 get '/player/not-ready' do
   player_registered
-  halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
+  game_not_started
 
   DB.transaction do
     PlayerState.find(:label => 'not-ready').add_player(@player)
@@ -332,9 +344,9 @@ end
 ### Action API フィルタ
 before '/player/action/*' do
   player_registered
-  halt_ng "ゲームが開始されていません。" unless game_started?(@player.room)
+  game_started
 
-  @game  = @player.room.games.last
+  @game  = @room.games.last
   @round = @game.rounds.last
   @table = @round.tables.first
   @current_player = @player.room.games.last.rounds.last.tables.first.current_player
