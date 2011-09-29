@@ -146,6 +146,28 @@ helpers do
       )
   end
 
+  ### 各種制約条件
+  
+  def phase_wait_to_dobon
+    if Time.now - @table.last_played_time <= 2.0
+      halt_ng "ドボン待ち時間です。"
+    end
+  end
+
+  def your_turn
+    if @current_player.id != @player.id or
+       @round.round_state.label != 'wait-to-play'
+      halt_ng "貴方の手番ではありません。"
+    end
+  end
+
+  def player_registered
+    halt_ng "プレイヤー登録が行われていません。" if @player.nil?
+  end
+
+  def player_not_registered
+  end
+
   ### ゲームが開始されているかどうか。
   def game_started?(room)
     return (not room.games.empty? and room.games.last.game_results.empty?)
@@ -218,7 +240,7 @@ end
 
 ## 部屋からの退出
 get '/player/quit' do
-  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
+  player_registered
   halt_ng "ゲーム中は退出出来ません。" if game_started?(@player.room)
 
   ### プレイヤーをinactiveに
@@ -239,7 +261,7 @@ end
 
 ## 準備完了
 get '/player/ready' do
-  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
+  player_registered
   halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
@@ -297,7 +319,7 @@ end
 
 ### 準備未完了
 get '/player/not-ready' do
-  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
+  player_registered
   halt_ng "既にゲームが開始しています。" if game_started?(@player.room)
 
   DB.transaction do
@@ -309,7 +331,7 @@ end
 
 ### Action API フィルタ
 before '/player/action/*' do
-  halt_ng "プレイヤー登録が行われていません。" if @player.nil?
+  player_registered
   halt_ng "ゲームが開始されていません。" unless game_started?(@player.room)
 
   @game  = @player.room.games.last
@@ -322,14 +344,8 @@ end
 ### カードを場に出す
 get '/player/action/play' do
   ## エラーチェック
-  if @current_player.id != @player.id or
-     @round.round_state.label != 'wait-to-play'
-    halt_ng "貴方の手番ではありません。"
-  end
-
-  if Time.now - @table.last_played_time <= 2.0
-    halt_ng "ドボン待ち時間です。"
-  end
+  your_turn
+  phase_wait_to_dobon
 
   halt_ng 'カードを指定して下さい。' unless params[:card]
 
@@ -370,10 +386,8 @@ end
 
 ### パスする
 get '/player/action/pass' do
-  if @current_player.id != @player.id or
-     @round.round_state.label != 'wait-to-play'
-    halt_ng "貴方の手番ではありません。"
-  end
+  your_turn
+  phase_wait_to_dobon
 
   table = table_model_to_logic(@table)
 
@@ -402,10 +416,6 @@ get '/player/action/pass' do
   end
 
   return_ok ''
-end
-
-### ドボンAPI用フィルタ
-before '/player/action/*dobon' do
 end
 
 ### ドボンする
