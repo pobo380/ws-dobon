@@ -149,7 +149,8 @@ helpers do
   ### 各種制約条件
   
   def phase_wait_to_dobon
-    if Time.now - @table.last_played_time <= 2.0
+    last_played_time = @table.last_played_time
+    if not @table.passed and not last_played_time.nil? and Time.now - last_played_time <= 2.0
       halt_ng "ドボン待ち時間です。"
     end
   end
@@ -389,8 +390,8 @@ get '/player/action/play' do
       :last_played_id => @player.id,
       :last_played_time => Time.now.to_s
     )
-    RoundState.find(:label => 'wait-to-dobon')
-     .add_round(@round)
+    #RoundState.find(:label => 'wait-to-dobon')
+    # .add_round(@round)
   end
 
   return_ok ''
@@ -423,8 +424,8 @@ get '/player/action/pass' do
                       next_player(1).id)
     end
 
-    RoundState.find(:label => 'wait-to-dobon')
-     .add_round(@round)
+    #RoundState.find(:label => 'wait-to-dobon')
+    # .add_round(@round)
   end
 
   return_ok ''
