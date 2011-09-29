@@ -70,7 +70,7 @@ module Models
   class Table < Sequel::Model
     many_to_one :round
     many_to_one :current_player, :class => :Player
-    one_to_many :last_played, :class => :Player
+    many_to_one :last_played, :class => :Player
 
     include AutoTimestamp
   end
@@ -148,7 +148,7 @@ helpers do
 
   ### 各種制約条件
   
-  def phase_wait_to_dobon
+  def phase_not_wait_to_dobon
     last_played_time = @table.last_played_time
     if not @table.passed and not last_played_time.nil? and Time.now - last_played_time <= 2.0
       halt_ng "ドボン待ち時間です。"
@@ -182,6 +182,10 @@ helpers do
     halt_ng "前回のプレイヤーがパスをしています。" if @table.passed
   end
 
+  def not_agari(player)
+    halt_ng "上がり状態です。" if agari?(player)
+  end
+
   ### ゲームが開始されているかどうか。
   def game_started?
     return (not @room.games.empty? and @room.games.last.game_results.empty?)
@@ -194,6 +198,11 @@ helpers do
     @table.reverse ? idc = @room.players.size - times : idc = times
     next_idx = (current_idx + idc) % @room.players.size
     orders[:order => next_idx].player
+  end
+
+  ### 上がり状態であるかどうか
+  def agari?(player)
+    Playingcard::Deck.new(player.hand).size == 0
   end
 end
 
@@ -362,7 +371,8 @@ end
 get '/player/action/play' do
   ## エラーチェック
   your_turn
-  phase_wait_to_dobon
+  not_agari(@table.last_played)
+  phase_not_wait_to_dobon
 
   halt_ng 'カードを指定して下さい。' unless params[:card]
 
@@ -404,7 +414,8 @@ end
 ### パスする
 get '/player/action/pass' do
   your_turn
-  phase_wait_to_dobon
+  not_agari(@table.last_played)
+  phase_not_wait_to_dobon
 
   table = table_model_to_logic(@table)
 
@@ -438,6 +449,40 @@ end
 ### ドボンする
 get '/player/action/dobon' do
   not_passed
+end
+
+### 上がり
+get '/player/action/agari' do
+  halt_ng '上がり状態ではありません。' unless agari?(@table.last_played)
+  halt_ng 'ドボン待ち時間です。' if Time.now - @table.last_played_time <= 5
+
+  ### 点数計算
+  points = @room.players.map{ |player|
+    if player.id != @table.last_played.id
+      [
+        player,
+        (Playingcard::Deck.new(player.hand).to_a.inject(0){|sum, card| sum += card.number} / 2.0).ceil
+      ]
+    end
+  }.compact
+
+  ### 上がり処理
+  DB.transaction do
+    points.each do |player, point|
+      rr = RoundResult.create(:round_id  => @round.id,
+                              :player_id => player.id,
+                              :point => -1 * point)
+      FinishType.find(:label => 'make').add_round_result(rr)
+    end
+
+    
+    r = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @table.last_played.id,
+                       :point => points.map{|player, point| point}.inject(0){|sum, point| sum += point})
+    FinishType.find(:label => 'agari').add_round_result(r)
+  end
+
+  return_ok ''
 end
 
 ## Views
