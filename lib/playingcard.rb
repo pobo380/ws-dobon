@@ -167,6 +167,12 @@ module Playingcard
       @cards = @cards.sort_by{rand}
     end
 
+    def sum
+      @cards.inject(0){|sum, card|
+        sum += card.number
+      }
+    end
+
     # class method
     def self.new_1set
       Deck.new([

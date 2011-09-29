@@ -34,6 +34,16 @@ module Dobon
       end
     end
 
+    def dobon(hand)
+      if self.top.joker? and hand.size == 1 and hand[0].joker?
+        'joker'
+      elsif self.top.number == hand.sum and not self.top.number == 8
+        'dobon'
+      else
+        'miss-dobon'
+      end
+    end
+
     def put(card, specify=nil)
       return nil if ( ! card.joker? && self.top.joker? && @restriction )
       p 'ok joker?' # debug print

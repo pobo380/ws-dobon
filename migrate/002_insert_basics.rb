@@ -3,7 +3,7 @@ Sequel.migration do
     require File.expand_path(File.dirname(__FILE__)) + '/../ws-dobon'
 
     # GameState
-    ['dobon', 'agari', 'make'].each do |e|
+    ['dobon', 'agari', 'miss-dobon', 'make'].each do |e|
       Models::FinishType.create(:label => e)
     end
 

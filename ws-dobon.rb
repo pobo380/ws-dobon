@@ -449,6 +449,51 @@ end
 ### ドボンする
 get '/player/action/dobon' do
   not_passed
+  res = dobon(@hand)
+  point = @table.last_played.hand.sum
+  case res
+  when 'dobon'
+    ### ドボンしたプレイヤー
+    r = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @player.id,
+                       :point => point)
+    FinishType.find(:label => 'dobon').add_round_result(r)
+
+    ### ドボンされたプレイヤー
+    rr = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @table.last_played.id,
+                       :point => point * -1)
+    FinishType.find(:label => 'make').add_round_result(rr)
+
+  when 'joker'
+    ### ドボンしたプレイヤー
+    r = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @player.id,
+                       :point => point * 14)
+    FinishType.find(:label => 'dobon').add_round_result(r)
+
+    ### ドボンされたプレイヤー
+    rr = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @table.last_played.id,
+                       :point => point * -14)
+    FinishType.find(:label => 'make').add_round_result(rr)
+
+  when 'miss-dobon'
+    ### ドボンしたプレイヤー
+    r = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @player.id,
+                       :point => -1 * point)
+    FinishType.find(:label => 'make').add_round_result(r)
+
+    ### ドボンされたプレイヤー
+    rr = RoundResult.create(:round_id  => @round.id,
+                       :player_id => @table.last_played.id,
+                       :point => point)
+    FinishType.find(:label => 'miss-dobon').add_round_result(rr)
+  end
+
+
+  return_ok ''
 end
 
 ### 上がり
@@ -461,7 +506,7 @@ get '/player/action/agari' do
     if player.id != @table.last_played.id
       [
         player,
-        (Playingcard::Deck.new(player.hand).to_a.inject(0){|sum, card| sum += card.number} / 2.0).ceil
+        (Playingcard::Deck.new(player.hand).sum / 2.0).ceil
       ]
     end
   }.compact
