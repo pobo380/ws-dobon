@@ -397,9 +397,12 @@ get '/player/action/pass' do
   return_ok ''
 end
 
+### ドボンAPI用フィルタ
+before '/player/action/*dobon' do
+end
+
 ### ドボンする
 get '/player/action/dobon' do
-  return_ok ''
 end
 
 ### ドボンなし
@@ -408,7 +411,7 @@ get '/player/action/no-dobon' do
     halt_ng "ドボン待ち状態ではありません。"
   end
 
-  if Time.now - @table.last_played_time <= 5.0
+  if Time.now - @table.last_played_time <= 2.0
     halt_ng "ドボン待ち時間です。"
   end
 
