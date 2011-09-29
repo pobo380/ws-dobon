@@ -170,24 +170,24 @@ helpers do
   end
 
   def game_started
-    halt_ng "ゲームが開始されていません。" unless game_started?(@room)
+    halt_ng "ゲームが開始されていません。" unless game_started?
   end
 
   def game_not_started
-    halt_ng "既にゲームが開始しています。" if game_started?(@room)
+    halt_ng "既にゲームが開始しています。" if game_started?
   end
 
   ### ゲームが開始されているかどうか。
-  def game_started?(room)
-    return (not room.games.empty? and room.games.last.game_results.empty?)
+  def game_started?
+    return (not @room.games.empty? and @room.games.last.game_results.empty?)
   end
 
   ### 次のプレイヤーを取得
   def next_player(times = 1)
     orders = @game.playing_orders_dataset.order(:order)
     current_idx = orders[:player_id => @table.current_player.id].order
-    @table.reverse ? idc = @player.room.players.size - times : idc = times
-    next_idx = (current_idx + idc) % @player.room.players.size
+    @table.reverse ? idc = @room.players.size - times : idc = times
+    next_idx = (current_idx + idc) % @room.players.size
     orders[:order => next_idx].player
   end
 end
@@ -262,9 +262,9 @@ get '/player/quit' do
   session[:sessionkey] = ''
 
   ### プレイヤー数が0であれば部屋を閉じる
-  if @player.room.players.all?{|player| player.player_state.label == 'inactive'}
+  if @room.players.all?{|player| player.player_state.label == 'inactive'}
     DB.transaction do
-      @player.room.update(:is_closed => true)
+      @room.update(:is_closed => true)
     end
   end
 
@@ -280,24 +280,24 @@ get '/player/ready' do
     PlayerState.find(:label => 'ready').add_player(@player)
   end
 
-  if @player.room.players.size > 0 and # N人以上で
-     @player.room.players.all?{|player| player.player_state.label == 'ready' }
+  if @room.players.size > 0 and # N人以上で
+     @room.players.all?{|player| player.player_state.label == 'ready' }
 
     ## ゲーム開始
     DB.transaction do
       ## ゲームをテーブルに追加
-      game  = @player.room.add_game({})
+      game  = @room.add_game({})
 
       ## テーブルの生成
       table = Dobon::Table.new(Playingcard::Deck.new_1set)
       skip = table.reset
 
       ## プレイ順の決定
-      players = @player.room.players.sort_by{rand}
+      players = @room.players.sort_by{rand}
       orders = players.map.with_index do |player, idx|
         order = PlayingOrder.create(:order => idx)
         player.add_playing_order(order)
-        player.room.games.last.add_playing_order(order)
+        @room.games.last.add_playing_order(order)
         order
       end
 
@@ -349,7 +349,7 @@ before '/player/action/*' do
   @game  = @room.games.last
   @round = @game.rounds.last
   @table = @round.tables.first
-  @current_player = @player.room.games.last.rounds.last.tables.first.current_player
+  @current_player = @table.current_player
   @hand = Playingcard::Deck.new(@player.hand)
 end
 
