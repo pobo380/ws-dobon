@@ -178,6 +178,10 @@ helpers do
     halt_ng "既にゲームが開始しています。" if game_started?
   end
 
+  def not_passed
+    halt_ng "前回のプレイヤーがパスをしています。" if @table.passed
+  end
+
   ### ゲームが開始されているかどうか。
   def game_started?
     return (not @room.games.empty? and @room.games.last.game_results.empty?)
@@ -316,7 +320,7 @@ get '/player/ready' do
         :specify => table.specify,
         :restriction => table.restriction,
         :reverse => table.reverse,
-        :passed => table.passed,
+        :passed => true,
         :attack => table.attack.to_s,
         :current_player_id => orders.sort_by{|e|e.order}.first.player.id
       )
@@ -433,6 +437,7 @@ end
 
 ### ドボンする
 get '/player/action/dobon' do
+  not_passed
 end
 
 ## Views
