@@ -308,29 +308,30 @@ end
 before '/player/action/*' do
   halt_ng "プレイヤー登録が行われていません。" if @player.nil?
   halt_ng "ゲームが開始されていません。" unless game_started?(@player.room)
-  current_player = @player.room.games.last.rounds.last.tables.first.current_player
-  unless current_player.id == @player.id
-    halt_ng "貴方の手番ではありません。"
-  end
 
   @game  = @player.room.games.last
   @round = @game.rounds.last
   @table = @round.tables.first
+  @current_player = @player.room.games.last.rounds.last.tables.first.current_player
+  @hand = Playingcard::Deck.new(@player.hand)
 end
 
 ### カードを場に出す
 get '/player/action/play' do
   ## エラーチェック
+  if @current_player.id != @player.id or
+     @round.round_state.label != 'wait-to-play'
+    halt_ng "貴方の手番ではありません。"
+  end
+
   halt_ng 'カードを指定して下さい。' unless params[:card]
 
   card = Playingcard::Card.new(params[:card])
   halt_ng '不正なカードの値です。' unless card.valid?
-
-  hand = Playingcard::Deck.new(@player.hand)
-  unless hand.include?(card)
+  unless @hand.include?(card)
     halt_ng '指定されたカードが手札にありません。'
   end
-  hand.delete(card)
+  @hand.delete(card)
 
   table = table_model_to_logic(@table)
 
@@ -340,7 +341,7 @@ get '/player/action/play' do
   end
 
   DB.transaction do
-    @player.update(:hand => hand.to_s)
+    @player.update(:hand => @hand.to_s)
     @table.update(
       :deck => table.deck.to_s,
       :discards => table.discards.to_s,
@@ -352,6 +353,8 @@ get '/player/action/play' do
       :current_player_id => next_player(res ? 2 : 1).id,
       :last_played_time => Time.now.to_s
     )
+    RoundState.find(:label => 'wait-to-dobon')
+     .add_round(@round)
   end
 
   return_ok ''
@@ -359,16 +362,51 @@ end
 
 ### パスする
 get '/player/action/pass' do
-  DB.transaction do
-    @table.update(
-      :current_player_id => next_player(1).id
-    )
+  if @current_player.id != @player.id or
+     @round.round_state.label != 'wait-to-play'
+    halt_ng "貴方の手番ではありません。"
   end
+
+  table = table_model_to_logic(@table)
+
+  draw, next_turn = table.pass
+  draw.times{ @hand.push(table.draw) }
+
+  DB.transaction do
+    @player.update(:hand => @hand.to_s)
+    @table.update(
+      :deck => table.deck.to_s,
+      :discards => table.discards.to_s,
+      :specify => table.specify,
+      :restriction => table.restriction,
+      :reverse => table.reverse,
+      :passed => table.passed,
+      :attack => table.attack.to_s,
+      :last_played_time => Time.now.to_s
+    )
+    if next_turn
+      @table.update(:current_player_id =>
+                      next_player(next_turn ? 2 : 1).id)
+    end
+
+    RoundState.find(:label => 'wait-to-dobon')
+     .add_round(@round)
+  end
+
   return_ok ''
 end
 
 ### ドボンする
 get '/player/action/dobon' do
+  return_ok ''
+end
+
+### ドボンなし
+get '/player/action/no-dobon' do
+
+  DB.transaction do
+  end
+
   return_ok ''
 end
 

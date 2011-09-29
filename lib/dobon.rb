@@ -177,7 +177,11 @@ module Dobon
       return nil if ( ( card.number == 11 || card.number == 14 ) && ! specify )
       p 'ok specify arg check' # debug print
 
-      if card.number == self.top.number || card.suit == self.top.suit || card.joker? || self.top.joker? || card.number == 11 || @specify then
+      if card.number == self.top.number ||
+         card.suit == self.top.suit ||
+         card.joker? || card.number == 11 ||
+         self.top.joker? || self.top.number == 11 ||
+         @specify then
         @discards.push(card)
         @passed = false
         self.ruling(specify)
