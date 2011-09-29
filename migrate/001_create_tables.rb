@@ -69,6 +69,7 @@ Sequel.migration do
       primary_key :id
       foreign_key :round_id, :rounds
       foreign_key :current_player_id, :players
+      foreign_key :last_played_id, :players
 
       String :deck,     :text => true
       String :discards, :text => true

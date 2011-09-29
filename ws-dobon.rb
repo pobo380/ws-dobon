@@ -70,6 +70,7 @@ module Models
   class Table < Sequel::Model
     many_to_one :round
     many_to_one :current_player, :class => :Player
+    one_to_many :last_played, :class => :Player
 
     include AutoTimestamp
   end
@@ -87,6 +88,7 @@ module Models
     one_to_many :winner_rounds, :class => :Round, :key => :winner_id
     one_to_many :loser_rounds,  :class => :Round, :key => :loser_id
     one_to_many :current_player_tables, :class => :Table, :key => :current_player_id
+    one_to_many :last_played_tables, :class => :Table, :key => :last_played_id
     one_to_many :game_results
     one_to_many :playing_orders
 
