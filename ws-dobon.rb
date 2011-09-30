@@ -2,6 +2,8 @@
 require 'rubygems'
 require 'sequel'
 require 'sinatra'
+require 'haml'
+require 'sass'
 require 'digest/sha2'
 require 'time'
 require 'enumerator'
@@ -10,6 +12,9 @@ $:.unshift(File.expand_path(File.dirname(__FILE__)))
 require 'lib/dobon'
 
 ### Configs
+def app_root
+  "#{env['rack.url_scheme']}://#{env['HTTP_HOST']}#{env['SCRIPT_NAME']}"
+end
 
 use Rack::Session::Cookie,
   :expire_after => 2592000,
@@ -553,8 +558,16 @@ get '/player/action/agari' do
   return_ok ''
 end
 
-## Views
+### Views
+
+## index.haml
 get '/' do
-  r = Room.filter(:is_closed => false).map{|e| e.name }
-  r.join("\n")
+  haml :index
 end
+
+## stylesheets
+get '/styles/*.css' do |filename|
+  content_type 'text/css', :charset => 'utf-8'
+  sass filename.to_sym
+end
+

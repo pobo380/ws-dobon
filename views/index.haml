@@ -1,0 +1,21 @@
+!!! XML
+!!!
+//
+%html
+  %head
+    %title
+      Web De Dobon!!
+    %meta{'http-equiv' => 'content', :content => 'text/html; charset=utf-8'}
+    %script{:type => 'text/javascript',
+            :src  => "#{app_root}/js/lib/jquery.js"}
+    %script{:type => 'text/javascript',
+            :src  => "#{app_root}/js/lib/jquery-ui.js"}
+  %body
+    %h1
+      Web De Dobon!!
+    %div#create_room
+      %form
+        %input#room_name{:type => 'text', :value => ''}
+        %button#create_room_button
+          create
+    %div#room_list
