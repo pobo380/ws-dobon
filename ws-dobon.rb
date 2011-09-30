@@ -126,6 +126,9 @@ end
 
 ### Helpers
 helpers do
+
+  ### レスポンス生成
+  
   def halt_ng(message)
     halt ['NG', message].to_s
   end
@@ -134,6 +137,9 @@ helpers do
     ['OK', message].to_s
   end
 
+
+  ### モデルクラスをロジッククラスへ渡す
+  #
   def table_model_to_logic(table)
       Dobon::Table.new(
         Playingcard::Deck.new(table.deck),
@@ -204,6 +210,35 @@ helpers do
   def agari?(player)
     Playingcard::Deck.new(player.hand).size == 0
   end
+
+  ### DB更新関数
+  def create_new_round(game, players, current_player_id)
+    ## テーブルの生成
+    table = Dobon::Table.new(Playingcard::Deck.new_1set)
+    skip = table.reset
+
+    ## 手札を配る
+    players.map do |player|
+      hand = Playingcard::Deck.new(Array.new(5){ table.draw.to_s }).to_s
+      player.update(:hand => hand)
+    end
+
+    ## ラウンドをテーブルに追加
+    round = game.add_round({})
+    table = round.add_table(
+      :deck => table.deck.to_s,
+      :discards => table.discards.to_s,
+      :specify => table.specify,
+      :restriction => table.restriction,
+      :reverse => table.reverse,
+      :passed => true,
+      :attack => table.attack.to_s,
+      :current_player_id => current_player_id
+    )
+    RoundState.find(:label => 'wait-to-play').add_round(round)
+    table.update(:current_player_id => next_player.id) if skip
+  end
+
 end
 
 ### Routes
@@ -302,10 +337,6 @@ get '/player/ready' do
       ## ゲームをテーブルに追加
       game  = @room.add_game({})
 
-      ## テーブルの生成
-      table = Dobon::Table.new(Playingcard::Deck.new_1set)
-      skip = table.reset
-
       ## プレイ順の決定
       players = @room.players.sort_by{rand}
       orders = players.map.with_index do |player, idx|
@@ -315,26 +346,10 @@ get '/player/ready' do
         order
       end
 
-      ## 手札を配る
-      players.map do |player|
-        hand = Playingcard::Deck.new(Array.new(5){ table.draw.to_s }).to_s
-        player.update(:hand => hand)
-      end
+      current_player_id = orders.sort_by{|e|e.order}.first.player.id
 
-      ## ラウンドをテーブルに追加
-      round = game.add_round({})
-      table = round.add_table(
-        :deck => table.deck.to_s,
-        :discards => table.discards.to_s,
-        :specify => table.specify,
-        :restriction => table.restriction,
-        :reverse => table.reverse,
-        :passed => true,
-        :attack => table.attack.to_s,
-        :current_player_id => orders.sort_by{|e|e.order}.first.player.id
-      )
-      RoundState.find(:label => 'wait-to-play').add_round(round)
-      table.update(:current_player_id => next_player.id) if skip
+      ### ラウンド, テーブルの生成
+      start_new_round(game, players, current_player_id)
     end
 
     return_ok "all-players-ready"
@@ -531,5 +546,10 @@ get '/' do
 end
 
 get '/test' do
+  DB.transaction do
+    transaction_test
+  end
+
+  'test'
 end
 
