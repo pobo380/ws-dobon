@@ -212,7 +212,7 @@ helpers do
   end
 
   ### DB更新関数
-  def create_new_round(game, players, current_player_id)
+  def start_new_round(game, players, current_player_id)
     ## テーブルの生成
     table = Dobon::Table.new(Playingcard::Deck.new_1set)
     skip = table.reset
@@ -453,7 +453,6 @@ get '/player/action/pass' do
       @table.update(:current_player_id =>
                       next_player(1).id)
     end
-
     #RoundState.find(:label => 'wait-to-dobon')
     # .add_round(@round)
   end
@@ -464,50 +463,62 @@ end
 ### ドボンする
 get '/player/action/dobon' do
   not_passed
+  halt_ng '自分の出したカードに対してドボンは出来ません。' if @player.id == @table.last_played.id
+
   table = table_model_to_logic(@table)
   res = table.dobon(@hand)
-  dobon_rate   = 0
-  dobon_label  = ''
-  target_rate  = 0
-  target_label = ''
+  winner_label = ''
+  loser_label  = ''
   point = Playingcard::Deck.new(@table.last_played.hand).sum
+  winner_id = ''
+  loser_id  = ''
 
   case res
   when 'dobon'
-    dobon_rate   =  1
-    target_rate  = -1
-    dobon_label  = 'dobon'
-    target_label = 'make'
+    rate         =  1
+    winner_label = 'dobon'
+    loser_label  = 'make'
+    winner_id    = @player.id
+    loser_id     = @table.last_played.id
   when 'joker'
-    dobon_rate   =  14
-    target_rate  = -14
-    dobon_label  = 'dobon'
-    target_label = 'make'
+    rate         =  14
+    winner_label = 'dobon'
+    loser_label  = 'make'
+    winner_id    = @player.id
+    loser_id     = @table.last_played.id
   when 'miss-dobon'
-    dobon_rate   = -1
-    target_rate  =  1
-    dobon_label  = 'make'
-    target_label = 'miss-dobon'
+    rate = 1
+    winner_label = 'make'
+    loser_label  = 'miss-dobon'
+    winner_id    = @table.last_played.id
+    loser_id     = @player.id
   end
 
-  ### ドボンしたプレイヤー
-  r = RoundResult.create(:round_id  => @round.id,
-                     :player_id => @player.id,
-                     :point => point * dobon_rate)
-  FinishType.find(:label => dobon_label).add_round_result(r)
+  DB.transaction do
+    ### 勝ちプレイヤー
+    r = RoundResult.create(:round_id  => @round.id,
+                       :player_id => winner_id,
+                       :point => point * rate)
+    FinishType.find(:label => winner_label).add_round_result(r)
 
-  ### ドボンされたプレイヤー
-  rr = RoundResult.create(:round_id  => @round.id,
-                     :player_id => @table.last_played.id,
-                     :point => point * target_rate)
-  FinishType.find(:label => target_label).add_round_result(rr)
+    ### 負けプレイヤー
+    rr = RoundResult.create(:round_id  => @round.id,
+                       :player_id => loser_id,
+                       :point => point * rate * -1)
+    FinishType.find(:label => loser_label).add_round_result(rr)
+
+    Round.update(:winner_id => winner_id, :loser_id => loser_id)
+
+    ### ラウンド, テーブルの生成
+    start_new_round(@game, @room.players, next_round_current_player_id)
+  end
 
   return_ok ''
 end
 
 ### 上がり
 get '/player/action/agari' do
-  halt_ng '上がり状態ではありません。' unless agari?(@table.last_played)
+  halt_ng '上がり状態ではありません。' if @table.last_played.nil? or not agari?(@table.last_played)
   halt_ng 'ドボン待ち時間です。' if Time.now - @table.last_played_time <= 5
 
   ### 点数計算
@@ -528,12 +539,17 @@ get '/player/action/agari' do
                               :point => -1 * point)
       FinishType.find(:label => 'make').add_round_result(rr)
     end
-
     
     r = RoundResult.create(:round_id  => @round.id,
                        :player_id => @table.last_played.id,
                        :point => points.map{|player, point| point}.inject(0){|sum, point| sum += point})
     FinishType.find(:label => 'agari').add_round_result(r)
+
+    loser_id = points.sort_by{|player, point| point}.last[0].id
+
+    Round.update(:winner_id => @table.last_played.id, :loser_id => loser_id)
+
+    start_new_round(@game, @room.players, next_round_current_player_id)
   end
 
   return_ok ''
