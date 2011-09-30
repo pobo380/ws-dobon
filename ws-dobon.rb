@@ -371,7 +371,7 @@ end
 get '/player/action/play' do
   ## エラーチェック
   your_turn
-  not_agari(@table.last_played)
+  not_agari(@table.last_played) unless @table.last_played.nil?
   phase_not_wait_to_dobon
 
   halt_ng 'カードを指定して下さい。' unless params[:card]
@@ -414,7 +414,7 @@ end
 ### パスする
 get '/player/action/pass' do
   your_turn
-  not_agari(@table.last_played)
+  not_agari(@table.last_played) unless @table.last_played.nil?
   phase_not_wait_to_dobon
 
   table = table_model_to_logic(@table)
@@ -449,49 +449,43 @@ end
 ### ドボンする
 get '/player/action/dobon' do
   not_passed
-  res = dobon(@hand)
-  point = @table.last_played.hand.sum
+  table = table_model_to_logic(@table)
+  res = table.dobon(@hand)
+  dobon_rate   = 0
+  dobon_label  = ''
+  target_rate  = 0
+  target_label = ''
+  point = Playingcard::Deck.new(@table.last_played.hand).sum
+
   case res
   when 'dobon'
-    ### ドボンしたプレイヤー
-    r = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @player.id,
-                       :point => point)
-    FinishType.find(:label => 'dobon').add_round_result(r)
-
-    ### ドボンされたプレイヤー
-    rr = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @table.last_played.id,
-                       :point => point * -1)
-    FinishType.find(:label => 'make').add_round_result(rr)
-
+    dobon_rate   =  1
+    target_rate  = -1
+    dobon_label  = 'dobon'
+    target_label = 'make'
   when 'joker'
-    ### ドボンしたプレイヤー
-    r = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @player.id,
-                       :point => point * 14)
-    FinishType.find(:label => 'dobon').add_round_result(r)
-
-    ### ドボンされたプレイヤー
-    rr = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @table.last_played.id,
-                       :point => point * -14)
-    FinishType.find(:label => 'make').add_round_result(rr)
-
+    dobon_rate   =  14
+    target_rate  = -14
+    dobon_label  = 'dobon'
+    target_label = 'make'
   when 'miss-dobon'
-    ### ドボンしたプレイヤー
-    r = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @player.id,
-                       :point => -1 * point)
-    FinishType.find(:label => 'make').add_round_result(r)
-
-    ### ドボンされたプレイヤー
-    rr = RoundResult.create(:round_id  => @round.id,
-                       :player_id => @table.last_played.id,
-                       :point => point)
-    FinishType.find(:label => 'miss-dobon').add_round_result(rr)
+    dobon_rate   = -1
+    target_rate  =  1
+    dobon_label  = 'make'
+    target_label = 'miss-dobon'
   end
 
+  ### ドボンしたプレイヤー
+  r = RoundResult.create(:round_id  => @round.id,
+                     :player_id => @player.id,
+                     :point => point * dobon_rate)
+  FinishType.find(:label => dobon_label).add_round_result(r)
+
+  ### ドボンされたプレイヤー
+  rr = RoundResult.create(:round_id  => @round.id,
+                     :player_id => @table.last_played.id,
+                     :point => point * target_rate)
+  FinishType.find(:label => target_label).add_round_result(rr)
 
   return_ok ''
 end
