@@ -252,6 +252,7 @@ include Models
 ## APIs
 
 get '/room/create' do
+  player_not_registered
   halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
 
   DB.transaction do
