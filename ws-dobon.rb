@@ -267,7 +267,6 @@ before '/player/*' do
   else
     @room = @player.room
   end 
-
 end
 
 ## 部屋への参加
@@ -546,7 +545,6 @@ get '/player/action/agari' do
     FinishType.find(:label => 'agari').add_round_result(r)
 
     loser_id = points.sort_by{|player, point| point}.last[0].id
-
     Round.update(:winner_id => @table.last_played.id, :loser_id => loser_id)
 
     start_new_round(@game, @room.players, next_round_current_player_id)
@@ -560,12 +558,3 @@ get '/' do
   r = Room.filter(:is_closed => false).map{|e| e.name }
   r.join("\n")
 end
-
-get '/test' do
-  DB.transaction do
-    transaction_test
-  end
-
-  'test'
-end
-
