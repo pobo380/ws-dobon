@@ -44,11 +44,20 @@
         %h2
           Game Table
         %div
+          %button#game_play
+            play
+          %button#game_dobon
+            dobon
           %button#game_ready{:value => 'ready'}
             ready
-          %div#display_message
-          %div#display_hand
+          %div.display_playinfo
+          %div.display_playinfo
             %span hand:
-          %div#display_player
-            %span turn: 
+            %span#your_hand
+          %div.display_playinfo
+            %span players: 
+            %span#players
+          %div.display_playinfo
+            %span played: 
+            %span#played
 

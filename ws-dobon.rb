@@ -559,6 +559,30 @@ get '/player/action/agari' do
   return_ok ''
 end
 
+### プレイデータ取得用URL
+get '/player/action/players' do
+  @room.players.map{|player|
+    [
+      player.name,
+      PlayingOrder.find(:player_id => player.id).order.to_s
+    ]
+  }.to_s
+end
+
+get '/player/action/hand' do
+  Playingcard::Deck.new(@player.hand).to_a.map{|c|
+    "#{c.to_s}"
+  }.to_s
+end
+
+get '/player/action/turn' do
+  '["' + @current_player.id.to_s + '"]'
+end
+
+get '/player/action/played' do
+  '["' + Playingcard::Deck.new(@table.discards).last.to_s + '"]'
+end
+
 ### Views
 
 ## index.haml

@@ -5,7 +5,7 @@
 $(function() {
   /** UI Initialize
    */
-  $("#create_room, #join_room, #game_ready").button();
+  $("#create_room, #join_room, #game_ready, #game_play, #game_dobon").button();
   $("#room_list").selectable();
   $("#game_table_container").hide();
 
@@ -20,6 +20,18 @@ $(function() {
         if(callback != undefined) { callback(); }
       }}
     });
+  };
+
+  var update_hand = function(deck) {
+    $("#your_hand").text(deck.join(', '));
+  };
+
+  var update_players = function(order) {
+    $("#players").text(order.join(', '));
+  };
+
+  var update_played = function(played) {
+    $("#played").text(played[0]);
   };
 
   var show_game_table = function() {
@@ -71,12 +83,23 @@ $(function() {
              function(msg) {
                if(val == 'ready') {
                  game_ready.attr('value', 'not-ready');
-                 game_ready.text('not-ready');
                }
                else {
                  game_ready.attr('value', 'ready');
-                 game_ready.text('ready');
                }
+               game_ready.attr("disabled", true);
+               $.getJSON("/player/action/hand", 
+                          function(json) {
+                            update_hand(json);
+                          });
+               $.getJSON("/player/action/players", 
+                          function(json) {
+                            update_players(json);
+                          });
+               $.getJSON("/player/action/played", 
+                          function(json) {
+                            update_played(json);
+                          });
              });
   });
 });
