@@ -40,4 +40,15 @@
           - @rooms.each do |room|
             %li.ui-widget-content
               %span.room_name{:value => "#{room.id}"}= "#{room.name}"
+      %div#game_table_container
+        %h2
+          Game Table
+        %div
+          %button#game_ready{:value => 'ready'}
+            ready
+          %div#display_message
+          %div#display_hand
+            %span hand:
+          %div#display_player
+            %span turn: 
 
