@@ -1,21 +1,43 @@
 !!! XML
 !!!
-//
 %html
   %head
     %title
       Web De Dobon!!
     %meta{'http-equiv' => 'content', :content => 'text/html; charset=utf-8'}
+    %link{:type => 'text/css',
+          :href => "#{app_root}/js/lib/css/ui-lightness/jquery-ui-1.8.16.custom.css",
+          :rel => 'stylesheet'}
+    %link{:type => 'text/css',
+          :href => "#{app_root}/styles/index.css",
+          :rel => 'stylesheet'}
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/lib/jquery.js"}
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/lib/jquery-ui.js"}
+    %script{:type => 'text/javascript',
+            :src  => "#{app_root}/js/ws-dobon.js"}
   %body
-    %h1
-      Web De Dobon!!
-    %div#create_room
-      %form
+    %div#main
+      %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
+        %p
+          test
+      %h1
+        Web De Dobon!!
+      %div#create_room_container
+        %h2
+          部屋を作成する
         %input#room_name{:type => 'text', :value => ''}
-        %button#create_room_button
+        %button#create_room
           create
-    %div#room_list
+      %div#room_list_container
+        %h2
+          部屋を選んでプレイを開始する
+        %input#player_name{:type => 'text', :value => ''}
+        %button#join_room
+          join
+        %ul#room_list
+          - @rooms.each do |room|
+            %li.ui-widget-content
+              %span.room_name{:value => "#{room.id}"}= "#{room.name}"
+

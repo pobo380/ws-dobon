@@ -251,19 +251,8 @@ include Models
 
 ## APIs
 
-get '/room/create' do
-  player_not_registered
-  halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
-
-  DB.transaction do
-    room = Room.create(:name => params[:name], :is_closed => false)
-  end
-
-  return_ok "部屋を作成しました"
-end
-
 ## ログイン状態であるかのフィルタ
-before '/player/*' do
+before '/*' do
   @player = Player.find(:sessionkey => session[:sessionkey])
 
   ## sessionkeyが有効でない or 既に部屋が閉じている
@@ -273,6 +262,17 @@ before '/player/*' do
   else
     @room = @player.room
   end 
+end
+
+get '/room/create' do
+  player_not_registered
+  halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
+
+  DB.transaction do
+    room = Room.create(:name => params[:name], :is_closed => false)
+  end
+
+  return_ok "部屋を作成しました"
 end
 
 ## 部屋への参加
@@ -563,6 +563,7 @@ end
 
 ## index.haml
 get '/' do
+  @rooms = Room.filter(:is_closed => false)
   haml :index
 end
 
