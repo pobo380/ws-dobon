@@ -301,7 +301,7 @@ get '/player/join' do
     session[:sessionkey] = player.sessionkey
   end
 
-  return_ok ""
+  return_ok "#{@room.name}に参加しました。"
 end
 
 ## 部屋からの退出
