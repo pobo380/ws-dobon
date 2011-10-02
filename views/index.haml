@@ -18,18 +18,19 @@
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/ws-dobon.js"}
     :javascript
-      if("{@player.nil?}" == "true") {
+      if("#{@player.nil?}" == "true") {
         var player_data = null;
       }
       else {
         var player_data = {
-          name: "#{@player.name}",
-          room: "#{@player.room_id}"
+          name: "#{@player.name unless @player.nil?}",
+          room: "#{@player.room_id unless @player.nil?}"
         };
       }
   %body
     %div#main
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
+        test
       %h1
         Web De Dobon!!
       %div#create_room_container
@@ -61,7 +62,7 @@
           %div.display_playinfo
           %div.display_playinfo
             %span hand:
-            %span#your_hand
+            %span#hand
           %div.display_playinfo
             %span players: 
             %span#players
