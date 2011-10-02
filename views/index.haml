@@ -17,11 +17,19 @@
             :src  => "#{app_root}/js/lib/jquery-ui.js"}
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/ws-dobon.js"}
+    :javascript
+      if("{@player.nil?}" == "true") {
+        var player_data = null;
+      }
+      else {
+        var player_data = {
+          name: "#{@player.name}",
+          room: "#{@player.room_id}"
+        };
+      }
   %body
     %div#main
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
-        %p
-          test
       %h1
         Web De Dobon!!
       %div#create_room_container

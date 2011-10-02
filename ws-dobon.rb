@@ -7,11 +7,15 @@ require 'sass'
 require 'digest/sha2'
 require 'time'
 require 'enumerator'
+require 'json'
 
 $:.unshift(File.expand_path(File.dirname(__FILE__)))
 require 'lib/dobon'
 
+###
 ### Configs
+###
+
 def app_root
   "#{env['rack.url_scheme']}://#{env['HTTP_HOST']}#{env['SCRIPT_NAME']}"
 end
@@ -20,7 +24,11 @@ use Rack::Session::Cookie,
   :expire_after => 2592000,
   :secret => ENV['SESSION_COOKIE_SECRET'] || 'CHANGE ME!!'
 
+
+###
 ### Models
+###
+
 module Models
 
   ## Connect to the database.
@@ -129,17 +137,21 @@ module Models
   end
 end
 
+
+###
 ### Helpers
+###
+
 helpers do
 
   ### レスポンス生成
   
   def halt_ng(message)
-    halt ['NG', message].to_s
+    halt({:status => 'NG', :message => message}.to_json)
   end
 
   def return_ok(message)
-    ['OK', message].to_s
+    {:status => 'OK', :message => message}.to_json
   end
 
 
@@ -246,10 +258,13 @@ helpers do
 
 end
 
+###
 ### Routes
+###
+
 include Models
 
-## APIs
+### APIs
 
 ## ログイン状態であるかのフィルタ
 before '/*' do
@@ -264,6 +279,7 @@ before '/*' do
   end 
 end
 
+## 部屋の作成
 get '/room/create' do
   player_not_registered
   halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
@@ -559,7 +575,7 @@ get '/player/action/agari' do
   return_ok ''
 end
 
-### プレイデータ取得用URL
+### プレイデータ取得用API
 get '/player/action/players' do
   @room.players.map{|player|
     [
@@ -582,6 +598,7 @@ end
 get '/player/action/played' do
   '["' + Playingcard::Deck.new(@table.discards).last.to_s + '"]'
 end
+
 
 ### Views
 

@@ -45,11 +45,11 @@ $(function() {
    */
   var call_api = function(url, data, ok) {
     $.getJSON(url, data, function(json) {
-      if(json[0] == "NG") {
-        show_dialog(json[1]);
+      if(json.status == "NG") {
+        show_dialog(json.message);
       }
       else {
-        ok(json[1]);
+        ok(json.message);
       }
     });
   };
@@ -102,4 +102,10 @@ $(function() {
                           });
              });
   });
+
+  /** Update screen
+   */
+  if(player_data != null) {
+    show_game_table();
+  }
 });
