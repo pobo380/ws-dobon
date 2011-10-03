@@ -1,15 +1,71 @@
-body
-  :width  99%
+@charset "UTF-8"
+/** 
+ * for Layout
+ */
 
-  #main
-    :width 500px
-    :margin 0 auto
+html, body
+  :height  100%
+  :margin  0
+  :padding 0
 
-input
-  :padding
-    :bottom 8px
-  :font
-    :size 150%
+div#ws-dobon-main
+  :height  100%
+  :display -webkit-box
+  :display -moz-box
+  :display -o-box
+  :display box
+  :font-family "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", Osaka, "メイリオ", Meiryo, "ＭＳ Ｐゴシック", sans-serif
+
+  div.container
+    :width  400px
+    :border
+      :right 1px dotted #e72247
+
+    h1
+      :margin 0 auto
+      :width  398px
+      :height 650px
+      :background
+        :image url("../image/title-logo.png")
+
+    h2.menu-title
+      :margin 0
+      :padding 0
+        :top 40px
+        :bottom 10px
+
+      a#menu_create_room
+        :background-image url("../image/menu/create_room.png")
+      a#menu_join_room
+        :background-image url("../image/menu/join_room.png")
+
+      a
+        :display block
+        :width  400px
+        :height 60px
+        :background-position top left
+
+        &:hover
+          :background-position bottom left
+
+    div.menu-contents
+      :display none
+      :margin 0 20px
+
+      input
+        :width 300px
+        :display block
+        :margin 0 auto
+        :font-size 1.5em
+
+      button
+        :width 100px
+        :display block
+        :margin 20px auto
+
+/**
+ * for Login Screen
+ */
 
 #feedback
   :font
@@ -41,6 +97,11 @@ input
 #dialog-message
   :display none
  
+
+/**
+ * for Game Table
+ */
+
 .display_playinfo
   :margin
     :top    10px
@@ -49,10 +110,18 @@ input
     :size 1.1em
 
 .playing_card_img
+  :float left
   :width  258px
   :height 348px
+  :margin
+    :right 10px
   :background
-    :image url("../image/playing_cards_small.png")
+    :image url("../image/playing_cards.png")
     :repeat no-repeat
     :position left top
 
+#hand
+  :list-style-type none
+
+.ui-selected
+  :border 2px solid red

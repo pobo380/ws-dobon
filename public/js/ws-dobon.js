@@ -3,6 +3,25 @@
  * @author pobo380
  */
 $(function() {
+  /** Load audio resources
+   */
+  var sounds = {
+    click: "button16"
+  };
+
+  var ext = "";
+  if((new Audio("")).canPlayType("audio/ogg") != "") {
+    ext = ".ogg";
+  }
+  else {
+    ext = ".wav";
+  }
+
+  for(var key in sounds) {
+    sounds[key] = new Audio("../sound/" + sounds[key] + ext);
+    sounds[key].autoplay = false;
+  }
+
   /** UI Initialize
    */
   $("#create_room, #join_room, #game_ready, #game_play, #game_dobon").button();
@@ -26,10 +45,11 @@ $(function() {
     html = '';
     for(var idx = 0; idx < deck.length; ++idx) {
       pos = string2image(deck[idx]);
-      html = html + '<div class="playing_card_img" style="background-position:' + 
-             [pos.x, pos.y].join('px ') + 'px">'+ deck[idx] + '</div>';
+      html = html + '<li class="playing_card_img ui-widget-content" style="background-position:' + 
+             [pos.x, pos.y].join('px ') + 'px"></li>';
     }
     $("#hand").html(html);
+    $("#hand").selectable();
   };
 
   var update_players = function(order) {
@@ -146,6 +166,11 @@ $(function() {
                             update_played(json);
                           });
              });
+  });
+
+  $(".menu-title a").bind("click", function() {
+    sounds.click.play();
+    $(this).parent().next().toggle(500);
   });
 
   /** Update screen

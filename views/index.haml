@@ -1,3 +1,4 @@
+-# coding: utf-8
 !!! XML
 !!!
 %html
@@ -28,28 +29,39 @@
         };
       }
   %body
-    %div#main
+    %div#ws-dobon-main
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
         test
-      %h1
-        Web De Dobon!!
-      %div#create_room_container
-        %h2
-          部屋を作成する
-        %input#room_name{:type => 'text', :value => ''}
-        %button#create_room
-          create
-      %div#room_list_container
-        %h2
-          部屋を選んでプレイを開始する
-        %input#player_name{:type => 'text', :value => ''}
-        %button#join_room
-          join
+      %div#title.container
+        %h1
+
+      %div#create_room_container.container
+        %h2.menu-title
+          %a#menu_create_room
+        %div.menu-contents
+          %p
+            作成するゲームの名前を入力して下さい。
+          %input#room_name{:type => 'text', :value => ''}
+          %button#create_room
+            create
+        %h2.menu-title
+          %a#menu_join_room
+        %div.menu-contents
+          %p
+            参加するゲームを選択し、プレイヤー名を入力してください。
+          %input#player_name{:type => 'text', :value => ''}
+          %button#join_room
+            join
+
+      %div#room_list_container.container
+        %div.input_label
+          Game List
         %ul#room_list
           - @rooms.each do |room|
             %li.ui-widget-content
               %span.room_name{:value => "#{room.id}"}= "#{room.name}"
-      %div#game_table_container
+
+      %div#game_table_container.container
         %h2
           Game Table
         %div
@@ -62,7 +74,7 @@
           %div.display_playinfo
           %div.display_playinfo
             %span hand:
-            %span#hand
+            %ol#hand
           %div.display_playinfo
             %span players: 
             %span#players
