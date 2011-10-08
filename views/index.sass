@@ -38,6 +38,8 @@ div#ws-dobon-main
         :background-image url("../image/menu/create_room.png")
       a#menu_join_room
         :background-image url("../image/menu/join_room.png")
+      a#menu_game_list
+        :background-image url("../image/menu/game_list.png")
 
       a
         :display block
@@ -63,65 +65,64 @@ div#ws-dobon-main
         :display block
         :margin 20px auto
 
-/**
- * for Login Screen
- */
+    &#room_list_container
+      :display none
+      :width 400px
 
-#feedback
-  :font
-    :size 1.1em
+      #feedback
+        :font
+          :size 1.1em
 
-#room_list
-  :list-style-type none
-  :margin
-    :top    20px
-  :padding  0
-  :width    70%
+      #room_list
+        :list-style-type none
+        :margin 20px auto
+        :padding  0
+        :width    70%
 
-  .ui-selecting
-    :background #FECA40
+        .ui-selecting
+          :background #FECA40
 
-  .ui-selected
-    :background #F39814
-    :color white
+        .ui-selected
+          :background #F39814
+          :color white
 
-  li
-    :margin  3px
-    :padding 0.4em
-    :font
-      :size  1.1em
-    :width   100%
-    :text
-      :align center
+        li
+          :margin 10px 0
+          :padding 0.4em
+          :font
+            :size  1.1em
+          :width   280px
+          :text
+            :align center
 
-#dialog-message
-  :display none
- 
+  div#dialog-message
+    :display none
 
-/**
- * for Game Table
- */
+  div#game_table_container
+    :width 800px
 
-.display_playinfo
-  :margin
-    :top    10px
-    :bottom 10px
-  :font
-    :size 1.1em
+    .display_playinfo
+      :margin
+        :top    10px
+        :bottom 10px
+      :font
+        :size 1.1em
 
-.playing_card_img
-  :float left
-  :width  258px
-  :height 348px
-  :margin
-    :right 10px
-  :background
-    :image url("../image/playing_cards.png")
-    :repeat no-repeat
-    :position left top
+    .playing_card_img
+      :float left
+      :width  56px
+      :height 80px
+      :box-sizing border-box
+      :margin
+        :right 10px
+      :background
+        :image url("../image/playing_cards_small.gif")
+        :repeat no-repeat
+        :position left top
 
-#hand
-  :list-style-type none
+    #hand
+      :list-style-type none
 
-.ui-selected
-  :border 2px solid red
+    .ui-selected
+      :border 1px solid red
+

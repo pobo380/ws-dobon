@@ -62,16 +62,16 @@ $(function() {
 
   var show_game_table = function() {
     $("#create_room_container, #room_list_container")
-      .hide(200);
+      .hide(1500);
     $("#game_table_container")
-      .show(500);
+      .show(1500);
   };
 
   /** playing cards: string to image
    */
   var string2image = function(str) {
     var pos  = {x:0, y:0};
-    var size = {w:258, h: 348}
+    var size = {w:56, h: 80}
     suit = str.charAt(0);
 
     rate = 0;
@@ -87,7 +87,7 @@ $(function() {
       case 'F':
         break;
     }
-    pos.y = (size.h + 7) * rate * -1;
+    pos.y = (size.h + 0) * rate * -1;
 
     num = str.charAt(1);
     rate = 0;
@@ -102,7 +102,7 @@ $(function() {
         break;
       }
     }
-    pos.x = (size.w + 7) * rate * -1;
+    pos.x = (size.w + 0) * rate * -1;
 
     return pos;
   }
@@ -168,9 +168,10 @@ $(function() {
              });
   });
 
-  $(".menu-title a").bind("click", function() {
+  $("#create_room_container .menu-title a").bind("click", function() {
     sounds.click.play();
     $(this).parent().next().toggle(500);
+    $("#room_list_container").slideDown(500);
   });
 
   /** Update screen

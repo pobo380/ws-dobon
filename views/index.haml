@@ -54,12 +54,13 @@
             join
 
       %div#room_list_container.container
-        %div.input_label
-          Game List
-        %ul#room_list
-          - @rooms.each do |room|
-            %li.ui-widget-content
-              %span.room_name{:value => "#{room.id}"}= "#{room.name}"
+        %h2.menu-title
+          %a#menu_game_list
+        %div
+          %ul#room_list
+            - @rooms.each do |room|
+              %li.ui-widget-content
+                %span.room_name{:value => "#{room.id}"}= "#{room.name}"
 
       %div#game_table_container.container
         %h2
