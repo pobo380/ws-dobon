@@ -24,7 +24,7 @@ $(function() {
 
   /** UI Initialize
    */
-  $("#create_room, #join_room, #game_ready, #game_play, #game_dobon").button();
+  $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass").button();
   $("#room_list").selectable();
   $("#game_table_container").hide();
 
@@ -65,6 +65,7 @@ $(function() {
       .hide(1500);
     $("#game_table_container")
       .show(1500);
+    $("#game_ready").attr("disabled", false);
   };
 
   /** playing cards: string to image
@@ -178,5 +179,6 @@ $(function() {
    */
   if(player_data != null) {
     show_game_table();
+    update_hand(player_data.hand.split(","));
   }
 });

@@ -101,28 +101,69 @@ div#ws-dobon-main
   div#game_table_container
     :width 800px
 
+    #table_area
+      :width  780px
+      :height 520px
+      :margin 0 auto
+      :padding
+        :top 20px
+      :position relative
+ 
+    #player_area
+      :width  780px
+      :height 110px
+      :margin 0 auto
+      :border
+        :top 1px dotted #e72247
+        :bottom 1px dotted #e72247
+
+      button
+        :width 70px
+        :font
+          :size 1em
+        :display block
+
+      #button_area
+        :float left
+        :width 180px
+
+        .button_block
+          :float left
+
+          button
+            :margin 12px 5px
+
+      #hand_area
+        :float left
+        :height 100%
+        :width  600px
+
+        #hand
+          :list-style-type none
+          :margin 0
+            :left  auto
+            :right auto
+          :padding
+            :top 15px
+
+          .ui-selected
+            :border 1px solid red
+
+          .playing_card_img
+            :float left
+            :width  56px
+            :height 80px
+            :box-sizing border-box
+            :margin
+              :right 10px
+            :background
+              :image url("../image/playing_cards_small.gif")
+              :repeat no-repeat
+              :position left top
+
     .display_playinfo
       :margin
         :top    10px
         :bottom 10px
       :font
         :size 1.1em
-
-    .playing_card_img
-      :float left
-      :width  56px
-      :height 80px
-      :box-sizing border-box
-      :margin
-        :right 10px
-      :background
-        :image url("../image/playing_cards_small.gif")
-        :repeat no-repeat
-        :position left top
-
-    #hand
-      :list-style-type none
-
-    .ui-selected
-      :border 1px solid red
-

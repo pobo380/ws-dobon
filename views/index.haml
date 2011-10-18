@@ -25,7 +25,8 @@
       else {
         var player_data = {
           name: "#{@player.name unless @player.nil?}",
-          room: "#{@player.room_id unless @player.nil?}"
+          room: "#{@player.room_id unless @player.nil?}",
+          hand: "#{@player.hand.unpack("a2"*(@player.hand.length/2)).join(",") unless @player.nil?}"
         };
       }
   %body
@@ -63,23 +64,25 @@
                 %span.room_name{:value => "#{room.id}"}= "#{room.name}"
 
       %div#game_table_container.container
-        %h2
-          Game Table
-        %div
-          %button#game_play
-            play
-          %button#game_dobon
-            dobon
-          %button#game_ready{:value => 'ready'}
-            ready
-          %div.display_playinfo
-          %div.display_playinfo
-            %span hand:
-            %ol#hand
+        %div#table_area
           %div.display_playinfo
             %span players: 
             %span#players
           %div.display_playinfo
             %span played: 
             %span#played
+        %div#player_area
+          %div#hand_area
+            %ol#hand
+          %div#button_area
+            %div.button_block
+              %button#game_play
+                play
+              %button#game_pass
+                pass
+            %div.button_block
+              %button#game_dobon
+                dobon
+              %button#game_ready{:value => 'ready'}
+                ready
 
