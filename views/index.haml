@@ -71,6 +71,22 @@
       %div#game_table_container.container
 
         %div#table_area
+          - # -----------------------------
+          %div#others_info
+            %div#other_area_left
+              %div.other_name  ぽぼ
+              %div.other_score -10
+              %div.other_hand_number 5
+
+            %div#other_area_right
+              %div.other_name  ひろこ
+              %div.other_score -55
+              %div.other_hand_number 2
+
+            %div#other_area_opposite
+              %div.other_name  さとこ
+              %div.other_score +15
+              %div.other_hand_number 6
 
           - # -----------------------------
           %div#round_info
@@ -78,6 +94,7 @@
               Round
             %span#round_number
               2
+
           - # -----------------------------
           %div#table_info
             %div#played_info
@@ -90,21 +107,8 @@
                 21
 
           - # -----------------------------
-          %div#others_info
-            %div#other_area_left
-              %div.other_name  pobo
-              %div.other_score -10
-              %div.other_hand_number 5
-
-            %div#other_area_right
-              %div.other_name  hiroko
-              %div.other_score -55
-              %div.other_hand_number 2
-
-            %div#other_area_opposite
-              %div.other_name  satoko
-              %div.other_score +15
-              %div.other_hand_number 6
+          %div#game_message
+            ドボン!!
 
         - # -----------------------------
         %div#player_area
