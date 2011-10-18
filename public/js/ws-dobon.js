@@ -247,7 +247,7 @@ $(function() {
                 room_id: $(".ui-selected span").attr("value") },
       function(data) {
         $.getJSON("player/self",{}, function(player){
-          window.player = player; ## 
+          window.player = player;
         });
         UI.bind_pusher_events(pusher, data.room_id);
         UI.update.show_table();
