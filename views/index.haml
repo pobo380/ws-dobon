@@ -13,6 +13,8 @@
           :href => "#{app_root}/styles/index.css",
           :rel => 'stylesheet'}
     %script{:type => 'text/javascript',
+            :src  => "http://js.pusherapp.com/1.9/pusher.min.js"}
+    %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/lib/jquery.js"}
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/lib/jquery-ui.js"}
@@ -20,13 +22,14 @@
             :src  => "#{app_root}/js/ws-dobon.js"}
     :javascript
       if("#{@player.nil?}" == "true") {
-        var player_data = null;
+        var player = null;
       }
       else {
-        var player_data = {
+        var player = {
+          id:   parseInt("#{@player.id unless @player.nil?}"),
           name: "#{@player.name unless @player.nil?}",
-          room: "#{@player.room_id unless @player.nil?}",
-          hand: "#{@player.hand.unpack("a2"*(@player.hand.length/2)).join(",") unless @player.nil?}"
+          hand: "#{@player.hand.unpack("a2"*(@player.hand.length/2)).join(",") unless @player.nil?}",
+          room_id: "#{@player.room_id unless @player.nil?}",
         };
       }
   %body
@@ -76,17 +79,17 @@
             %div#other_area_left
               %div.other_name  ぽぼ
               %div.other_score -10
-              %div.other_hand_number 5
+              %div.other_hand 5
 
             %div#other_area_right
               %div.other_name  ひろこ
               %div.other_score -55
-              %div.other_hand_number 2
+              %div.other_hand 2
 
             %div#other_area_opposite
               %div.other_name  さとこ
               %div.other_score +15
-              %div.other_hand_number 6
+              %div.other_hand 6
 
           - # -----------------------------
           %div#round_info

@@ -8,6 +8,7 @@ require 'digest/sha2'
 require 'time'
 require 'enumerator'
 require 'json'
+require 'pusher'
 
 $:.unshift(File.expand_path(File.dirname(__FILE__)))
 require 'lib/dobon'
@@ -24,6 +25,9 @@ use Rack::Session::Cookie,
   :expire_after => 2592000,
   :secret => ENV['SESSION_COOKIE_SECRET'] || 'CHANGE ME!!'
 
+Pusher.app_id = ENV['PUSHER_APP_ID'] || 'CHANGE ME!!'
+Pusher.key    = ENV['PUSHER_KEY']    || 'CHANGE ME!!'
+Pusher.secret = ENV['PUSHER_SECRET'] || 'CHANGE ME!!'
 
 ###
 ### Models
@@ -254,6 +258,8 @@ helpers do
     )
     RoundState.find(:label => 'wait-to-play').add_round(round)
     table.update(:current_player_id => next_player.id) if skip
+
+    table
   end
 
 end
@@ -317,7 +323,8 @@ get '/player/join' do
     session[:sessionkey] = player.sessionkey
   end
 
-  return_ok "#{@room.name}に参加しました。"
+  #return_ok "#{@room.name}に参加しました。"
+  {:room_id => @room.id}.to_json
 end
 
 ## 部屋からの退出
@@ -350,13 +357,14 @@ get '/player/ready' do
     PlayerState.find(:label => 'ready').add_player(@player)
   end
 
-  if @room.players.size > 0 and # N人以上で
+  if @room.players.size > 1 and # 4人以上で
      @room.players.all?{|player| player.player_state.label == 'ready' }
 
     ## ゲーム開始
+    table = nil
     DB.transaction do
       ## ゲームをテーブルに追加
-      game  = @room.add_game({})
+      game = @room.add_game({})
 
       ## プレイ順の決定
       players = @room.players.sort_by{rand}
@@ -370,8 +378,27 @@ get '/player/ready' do
       current_player_id = orders.sort_by{|e|e.order}.first.player.id
 
       ### ラウンド, テーブルの生成
-      start_new_round(game, players, current_player_id)
+      table = start_new_round(game, players, current_player_id)
+
     end
+
+    ## ゲーム開始をpush
+    others = @room.players.map{|player|
+      {
+        :id => player.id.to_i,
+        :name => player.name,
+        :hand => Playingcard::Deck.new(player.hand).size,
+        :order => PlayingOrder.find(:player_id => player.id).order
+      }
+    }.sort{|a, b|
+      a[:order] <=> b[:order]
+    }
+
+    Pusher[@room.id].trigger('deal', {
+      :round  => @room.games.last.rounds.size,
+      :played => table.discards,
+      :others => others,
+    })
 
     return_ok "all-players-ready"
   else
@@ -576,29 +603,20 @@ get '/player/action/agari' do
 end
 
 ### プレイデータ取得用API
-get '/player/action/players' do
-  @room.players.map{|player|
-    [
-      player.name,
-      PlayingOrder.find(:player_id => player.id).order.to_s
-    ]
-  }.to_s
+get '/player/self' do
+  {
+    :id => @player.id,
+    :name => @player.name,
+    #:hand => @player.hand.unpack("a2"*(@player.hand.length/2)).join(","),
+    :room_id => @player.room_id,
+  }.to_json
 end
 
 get '/player/action/hand' do
   Playingcard::Deck.new(@player.hand).to_a.map{|c|
     "#{c.to_s}"
-  }.to_s
+  }.to_s ## !TODO to_json
 end
-
-get '/player/action/turn' do
-  '["' + @current_player.id.to_s + '"]'
-end
-
-get '/player/action/played' do
-  '["' + Playingcard::Deck.new(@table.discards).last.to_s + '"]'
-end
-
 
 ### Views
 
