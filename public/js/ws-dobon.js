@@ -52,14 +52,6 @@ $(function() {
     $("#hand").selectable();
   };
 
-  var update_players = function(order) {
-    $("#players").text(order.join(', '));
-  };
-
-  var update_played = function(played) {
-    $("#played").text(played[0]);
-  };
-
   var show_game_table = function() {
     $("#create_room_container, #room_list_container")
       .hide(1500);
@@ -157,14 +149,6 @@ $(function() {
                $.getJSON("/player/action/hand", 
                           function(json) {
                             update_hand(json);
-                          });
-               $.getJSON("/player/action/players", 
-                          function(json) {
-                            update_players(json);
-                          });
-               $.getJSON("/player/action/played", 
-                          function(json) {
-                            update_played(json);
                           });
              });
   });

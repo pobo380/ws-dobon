@@ -108,9 +108,85 @@ div#ws-dobon-main
       :padding
         :top 20px
       :position relative
+
+      #round_info
+        :position absolute
+        :top 30px
+        :left 20px
+        :font-size 1.3em
+        :font-weight bold
+
+      #table_info
+        :position relative
+        :top 250px
+        :left 300px
+        :width 180px
+        :height 110px
+
+        :font-weight bold
+
+        #played_info
+          :position absolute
+          :top 0
+          :left 0
+          :height 100%
+
+          #played_number
+            :position absolute
+            :bottom 0
+            :right 20px
+
+        #deck_info
+          :position absolute
+          :top 0
+          :right 0
+          :height 100%
+
+          #deck_number
+            :position absolute
+            :bottom 0
+            :right 20px
  
+      #others_info
+        :position absolute
+        :top  0
+        :left 0
+        :width 100%
+        :height 100%
+
+        #other_area_left
+          :position absolute
+          :top    180px
+          :left    30px
+          :width  120px
+          :height 120px
+          :text-align left
+
+        #other_area_right
+          :position absolute
+          :top    180px
+          :right   30px
+          :width  120px
+          :height 120px
+          :text-align right
+
+        #other_area_opposite
+          :position absolute
+          :top     30px
+          :left   330px
+          :width  120px
+          :height  80px
+          :text-align center
+
+        .other_score
+          :font-weight bold
+
+        .other_hand_number
+          :font-weight bold
+          :font-size 2.5em
+
     #player_area
-      :width  780px
+      :width  100%
       :height 110px
       :margin 0 auto
       :border
@@ -146,24 +222,18 @@ div#ws-dobon-main
           :padding
             :top 15px
 
-          .ui-selected
-            :border 1px solid red
+    .ui-selected
+      :border 1px solid red
 
-          .playing_card_img
-            :float left
-            :width  56px
-            :height 80px
-            :box-sizing border-box
-            :margin
-              :right 10px
-            :background
-              :image url("../image/playing_cards_small.gif")
-              :repeat no-repeat
-              :position left top
-
-    .display_playinfo
+    .playing_card_img
+      :float left
+      :width  56px
+      :height 80px
+      :box-sizing border-box
       :margin
-        :top    10px
-        :bottom 10px
-      :font
-        :size 1.1em
+        :right 10px
+      :background
+        :image url("../image/playing_cards_small.gif")
+        :repeat no-repeat
+        :position left top
+

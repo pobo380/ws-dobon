@@ -31,11 +31,14 @@
       }
   %body
     %div#ws-dobon-main
+
+      - # --------------------------------------------------------------
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
         test
       %div#title.container
         %h1
 
+      - # --------------------------------------------------------------
       %div#create_room_container.container
         %h2.menu-title
           %a#menu_create_room
@@ -54,6 +57,7 @@
           %button#join_room
             join
 
+      - # --------------------------------------------------------------
       %div#room_list_container.container
         %h2.menu-title
           %a#menu_game_list
@@ -63,17 +67,51 @@
               %li.ui-widget-content
                 %span.room_name{:value => "#{room.id}"}= "#{room.name}"
 
+      - # --------------------------------------------------------------
       %div#game_table_container.container
+
         %div#table_area
-          %div.display_playinfo
-            %span players: 
-            %span#players
-          %div.display_playinfo
-            %span played: 
-            %span#played
+
+          - # -----------------------------
+          %div#round_info
+            %span
+              Round
+            %span#round_number
+              2
+          - # -----------------------------
+          %div#table_info
+            %div#played_info
+              %div#played_card.playing_card_img
+              %div#played_number
+                15
+            %div#deck_info
+              %div#deck_cards.playing_card_img
+              %div#deck_number
+                21
+
+          - # -----------------------------
+          %div#others_info
+            %div#other_area_left
+              %div.other_name  pobo
+              %div.other_score -10
+              %div.other_hand_number 5
+
+            %div#other_area_right
+              %div.other_name  hiroko
+              %div.other_score -55
+              %div.other_hand_number 2
+
+            %div#other_area_opposite
+              %div.other_name  satoko
+              %div.other_score +15
+              %div.other_hand_number 6
+
+        - # -----------------------------
         %div#player_area
+
           %div#hand_area
             %ol#hand
+
           %div#button_area
             %div.button_block
               %button#game_play
