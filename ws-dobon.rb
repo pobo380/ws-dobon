@@ -215,6 +215,7 @@ helpers do
 
   ### ゲームが開始されているかどうか。
   def game_started?
+    return false if @room.nil?
     return (not @room.games.empty? and @room.games.last.game_results.empty?)
   end
 
@@ -260,6 +261,51 @@ helpers do
     table.update(:current_player_id => next_player.id) if skip
 
     table
+  end
+
+  ## JSONレスポンスの生成
+  def player_json
+    unless @player.nil?
+      {
+        :id   => @player.id.to_i,
+        :name => @player.name,
+        :hand => Playingcard::Deck.new(@player.hand).to_a,
+        :room_id => @player.room_id,
+      }.to_json 
+    else
+      "null"
+    end
+  end
+
+  def deal_json_for_view(table=nil)
+    return false if @room.nil?
+    deal_json(table)
+  end
+
+  def deal_json(table=nil)
+    table ||= @room.games.last.rounds.last.tables.last
+
+    unless table.nil?
+      others = @room.players.map{|player|
+        {
+          :id => player.id.to_i,
+          :name => player.name,
+          :hand => Playingcard::Deck.new(player.hand).size,
+          :order => PlayingOrder.find(:player_id => player.id).order
+        }
+      }.sort{|a, b|
+        a[:order] <=> b[:order]
+      }
+
+      {
+        :round   => @room.games.last.rounds.size,
+        :played  => Playingcard::Deck.new(table.discards).to_a,
+        :others  => others,
+        :current_id => table.current_player_id
+      }.to_json
+    else
+      "null"
+    end
   end
 
 end
@@ -383,22 +429,7 @@ get '/player/ready' do
     end
 
     ## ゲーム開始をpush
-    others = @room.players.map{|player|
-      {
-        :id => player.id.to_i,
-        :name => player.name,
-        :hand => Playingcard::Deck.new(player.hand).size,
-        :order => PlayingOrder.find(:player_id => player.id).order
-      }
-    }.sort{|a, b|
-      a[:order] <=> b[:order]
-    }
-
-    Pusher[@room.id].trigger('deal', {
-      :round  => @room.games.last.rounds.size,
-      :played => table.discards,
-      :others => others,
-    })
+    Pusher[@room.id].trigger('deal', deal_json(table))
 
     return_ok "all-players-ready"
   else
@@ -447,7 +478,6 @@ get '/player/action/play' do
   @hand.delete(card)
 
   table = table_model_to_logic(@table)
-
   res = table.put(card, params[:specify])
   if res.nil?
     halt_ng 'プレイすることのできないカードであるか、スートが指定されていません。'
@@ -470,6 +500,9 @@ get '/player/action/play' do
     #RoundState.find(:label => 'wait-to-dobon')
     # .add_round(@round)
   end
+
+  ## カード出した
+  Pusher[@room.id].trigger('pass', deal_json(@table))
 
   return_ok ''
 end
@@ -501,9 +534,10 @@ get '/player/action/pass' do
       @table.update(:current_player_id =>
                       next_player(1).id)
     end
-    #RoundState.find(:label => 'wait-to-dobon')
-    # .add_round(@round)
   end
+
+  ## パスした
+  Pusher[@room.id].trigger('pass', deal_json(@table))
 
   return_ok ''
 end
@@ -604,12 +638,7 @@ end
 
 ### プレイデータ取得用API
 get '/player/self' do
-  {
-    :id => @player.id,
-    :name => @player.name,
-    #:hand => @player.hand.unpack("a2"*(@player.hand.length/2)).join(","),
-    :room_id => @player.room_id,
-  }.to_json
+  player_json()
 end
 
 get '/player/action/hand' do

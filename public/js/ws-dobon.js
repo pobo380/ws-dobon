@@ -50,13 +50,13 @@ var UI = {
     // -------------------------------------------
     "played" : function(card) {
       pos = this.utils.card_string2image(card);
-      $("#played_card").css("background-position", [pos.x, pos.y].join('px '));
+      $("#played_card").css("background-position", pos.x + "px " + pos.y + "px");
     },
 
     // -------------------------------------------
     // update others infomation.
     // -------------------------------------------
-    "others" : function(others) {
+    "others" : function(others, current_id) {
       var player_idx;
       for(player_idx = 0; player_idx < others.length; ++player_idx) {
         if(others[player_idx].id == player.id) {
@@ -67,12 +67,26 @@ var UI = {
       others.shift();
       console.log(others);
 
-      var others_names  = $(".other_name");
-      //var other_scores = $(".other_score");
-      var others_hands   = $(".other_hand");
+      var others_names = $(".other_name");
+      var others_hands = $(".other_hand");
       for(var idx = 0; idx < others.length; ++idx) {
         $(others_names[idx]).text(others[idx].name);
         $(others_hands[idx]).text(others[idx].hand);
+      }
+
+      var others_turn = $("#others_info div");
+      for(var idx = 0; idx < others.length; ++idx) {
+        if(others[idx].id == current_id) {
+          UI.update.game_message(others[idx].name + "のターンです。");
+          $(others_turn[idx]).addClass("current_player");
+        }
+        else {
+          $(others_turn[idx]).removeClass("current_player");
+        }
+      }
+
+      if(current_id == player.id) {
+        UI.update.game_message("あなたのターンです。");
       }
     },
 
@@ -84,10 +98,16 @@ var UI = {
       for(var idx = 0; idx < deck.length; ++idx) {
         pos = this.utils.card_string2image(deck[idx]);
         html = html + '<li class="playing_card_img ui-widget-content" style="background-position:' + 
-               [pos.x, pos.y].join('px ') + 'px"' + 'value="'+ deck[idx] +'"></li>';
+               [pos.x, pos.y].join('px ') + 'px"' + 'val="'+ deck[idx] +'"></li>';
       }
       $("#hand").html(html);
-      $("#hand").selectable();
+    },
+
+    // -------------------------------------------
+    // update Player's hand.
+    // -------------------------------------------
+    "game_message" : function(msg) {
+      $("#game_message").text(msg);
     },
 
     // -------------------------------------------
@@ -116,13 +136,13 @@ var UI = {
 
         rate = 0;
         switch(suit) {
-          case 'H':
-            rate = 0; break;
-          case 'C':
-            rate = 1; break;
-          case 'D':
-            rate = 2; break;
           case 'S':
+            rate = 0; break;
+          case 'H':
+            rate = 1; break;
+          case 'C':
+            rate = 2; break;
+          case 'D':
             rate = 3; break;
           case 'F':
             break;
@@ -196,11 +216,23 @@ var UI = {
       console.log('received:' + JSON.stringify(data));
     });
 
-    channel.bind('deal', function(data){
+    var update_table = function(data){
       console.log('received:' + JSON.stringify(data));
-      UI.update.played(data.played);
+      UI.update.played(data.played[data.played.length-1]);
       UI.update.round(data.round);
-      UI.update.others(data.others);
+      UI.update.others(data.others, data.current_id);
+      $.getJSON("player/action/hand", function(hand) {
+        UI.update.hand(hand);
+      });
+    }
+
+    channel.bind('deal', update_table);
+    channel.bind('play', update_table);
+
+    channel.bind('pass', function(data) {
+      console.log('received:' + JSON.stringify(data));
+      UI.update.round(data.round);
+      UI.update.others(data.others, data.current_id);
       $.getJSON("player/action/hand", function(hand){
         UI.update.hand(hand);
       });
@@ -224,15 +256,18 @@ $(function() {
    * UI Initialize
    */
   $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass").button();
-  $("#room_list").selectable();
+  $("#room_list, #hand").selectable();
   $("#game_table_container").hide();
 
   /**
    * Pusher
    */
-  var pusher  = new Pusher('cb41fd71f6794c98a6a6');
+  var get_pusher = function() {
+    return new Pusher('cb41fd71f6794c98a6a6');
+  }
 
-  /** Bind events
+  /**
+   * Bind click events
    */
   $("#create_room").bind('click', function() {
     UI.ajax.simple_get("room/create",
@@ -247,11 +282,12 @@ $(function() {
   $("#join_room").bind('click', function() {
     $.getJSON("player/join",
               { name:    $("#player_name").val(),
-                room_id: $(".ui-selected span").attr("value") },
+                room_id: $("#room_list .ui-selected span").attr("value") },
       function(data) {
         $.getJSON("player/self",{}, function(player){
           window.player = player;
         });
+        var pusher = get_pusher();
         UI.bind_pusher_events(pusher, data.room_id);
         UI.update.show_table();
       });
@@ -261,8 +297,25 @@ $(function() {
     game_ready = $("#game_ready");
     game_ready.attr("disabled", true);
     UI.ajax.simple_get("player/ready", {},
-                       function(msg){
+                       function(msg) {
                        });
+  });
+
+  $("#game_play").bind('click', function(){
+    /* スートの選択 */
+    UI.ajax.simple_get("player/action/play",
+                       { card: $("#hand .ui-selected").attr("val") },
+                       function(msg) {
+                       });
+  });
+
+  $("#game_pass").bind('click', function(){
+    UI.ajax.simple_get("player/action/pass", {},
+                       function(msg) {
+                       });
+  });
+
+  $("#game_dobon").bind('click', function(){
   });
 
   // メニュー選択時のクリック音
@@ -275,13 +328,27 @@ $(function() {
   /**
    * 入室しているかどうか
    */
-  if(player != null) {
+  if(player != undefined) {
+    var pusher = get_pusher();
     UI.bind_pusher_events(pusher, player.room_id);
+
+    /**
+     * ゲームが開始しているかどうか
+     */
+    if(table != undefined) {
+      UI.update.game_message("ゲーム開始");
+      UI.update.played(table.played[table.played.length-1]);
+      UI.update.round(table.round);
+      UI.update.others(table.others, table.current_id);
+    }
+    else {
+      UI.update.game_message("待機中...");
+    }
 
     UI.update.show_table();
 
     if(player.hand != "") {
-      UI.update.hand(player.hand.split(","));
+      UI.update.hand(player.hand);
     }
     console.log("入室済み");
   }

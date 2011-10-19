@@ -21,17 +21,8 @@
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/ws-dobon.js"}
     :javascript
-      if("#{@player.nil?}" == "true") {
-        var player = null;
-      }
-      else {
-        var player = {
-          id:   parseInt("#{@player.id unless @player.nil?}"),
-          name: "#{@player.name unless @player.nil?}",
-          hand: "#{@player.hand.unpack("a2"*(@player.hand.length/2)).join(",") unless @player.nil?}",
-          room_id: "#{@player.room_id unless @player.nil?}",
-        };
-      }
+      if(!#{@player.nil?}) { var player = #{player_json()}; }
+      if(#{game_started?}) { var table  = #{deal_json_for_view()};   }
   %body
     %div#ws-dobon-main
 
@@ -96,22 +87,21 @@
             %span
               Round
             %span#round_number
-              2
+              0
 
           - # -----------------------------
           %div#table_info
             %div#played_info
               %div#played_card.playing_card_img
               %div#played_number
-                15
+                -
             %div#deck_info
               %div#deck_cards.playing_card_img
               %div#deck_number
-                21
+                -
 
           - # -----------------------------
           %div#game_message
-            ドボン!!
 
         - # -----------------------------
         %div#player_area
