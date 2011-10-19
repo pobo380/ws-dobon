@@ -371,7 +371,7 @@ $(function() {
 
   $("#game_dobon").bind('click', function(){
     sounds.button.play();
-    UI.update.game_message("パスしました");
+    UI.update.game_message("ドボンしました");
     UI.ajax.simple_get("player/action/dobon", {},
                        function(msg) {
                        });

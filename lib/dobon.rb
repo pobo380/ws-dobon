@@ -49,7 +49,7 @@ module Dobon
       p 'ok joker?' # debug print
       return nil if (   card.number != self.top.number && @restriction )
       p 'ok restrection' # debug print
-      return nil if ( not ( card.number == 11 || card.number == 14 ) and card.suit != @specify ) if ( @specify )
+      return nil if ((not(card.number == 11 || card.number == 14)) and card.suit != @specify ) if ( @specify )
       p 'ok specify' # debug print
       return nil if ( ( card.number == 11 || card.number == 14 ) && ! specify )
       p 'ok specify arg check' # debug print
