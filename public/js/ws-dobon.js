@@ -203,6 +203,21 @@ var UI = {
     });
   },
 
+  ////////
+  "show_select_suit" : function(callback) {
+    $("#dialog-select-suit").dialog({
+      modal: true,
+      buttons: { OK: function() {
+        $(this).dialog("close");
+        if(callback != undefined) { callback(); }
+      },
+        Cancel: function() {
+        $(this).dialog("close");
+        }
+      }
+    });
+  },
+
   // -------------------------------------------
   // bind Pusher events.
   // -------------------------------------------
@@ -229,6 +244,13 @@ var UI = {
     channel.bind('deal', update_table);
     channel.bind('play', update_table);
 
+    channel.bind('dobon', function(data) {
+      UI.update.game_message('ドボン!!');
+      setTimeout(function() {
+        update_table(data.table);
+      }, 3000);
+    });
+
     channel.bind('pass', function(data) {
       console.log('received:' + JSON.stringify(data));
       UI.update.round(data.round);
@@ -249,14 +271,26 @@ $(function() {
   /**
    * Load audio resources
    */
-  var sounds = {click: "button16"};
+  var sounds = {click: "button16", select_card: "b_043", button: "b_005"};
   sounds = UI.audio.load(sounds);
 
   /**
    * UI Initialize
    */
   $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass").button();
-  $("#room_list, #hand").selectable();
+  $("#room_list, #hand").selectable({
+    selected : function(event, ui) {
+      sounds.select_card.play();
+    }
+  });
+  $("#suits_list").selectable({
+    selected : function(event, ui) {
+      $(ui.selected).css({fontWeight: "bold", color: "red", backgroundColor: "ddd"})
+    },
+    unselected : function(event, ui) {
+      $(ui.unselected).css({fontWeight: "", color: "", backgroundColor: ""})
+    }
+  });
   $("#game_table_container").hide();
 
   /**
@@ -305,20 +339,39 @@ $(function() {
    * プレイ動作のボタン
    */
   $("#game_play").bind('click', function(){
+    sounds.button.play();
+
     /* スートの選択 */
-    UI.ajax.simple_get("player/action/play",
-                       { card: $("#hand .ui-selected").attr("val") },
-                       function(msg) {
-                       });
+    var card = $("#hand .ui-selected").attr("val");
+    var suit = $("#suits_list .ui-selected").attr("val");
+
+
+    var callback = function() {
+      UI.ajax.simple_get("player/action/play",
+                         { card: card, specify: suit},
+                         function(msg) {
+                         });
+    };
+
+    if(card == "FF" || card.charAt(1) == "J") {
+      UI.show_select_suit(callback)
+    }
+    else {
+      callback();
+    }
   });
 
   $("#game_pass").bind('click', function(){
+    sounds.button.play();
+    UI.update.game_message("パスしました");
     UI.ajax.simple_get("player/action/pass", {},
                        function(msg) {
                        });
   });
 
   $("#game_dobon").bind('click', function(){
+    sounds.button.play();
+    UI.update.game_message("パスしました");
     UI.ajax.simple_get("player/action/dobon", {},
                        function(msg) {
                        });

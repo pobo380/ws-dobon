@@ -274,14 +274,18 @@ helpers do
   end
 
   ## JSONレスポンスの生成
-  def player_json
+  def player_json_for_view
+    player_response().to_json
+  end
+
+  def player_response
     unless @player.nil?
       {
         :id   => @player.id.to_i,
         :name => @player.name,
         :hand => Playingcard::Deck.new(@player.hand).to_a,
         :room_id => @player.room_id,
-      }.to_json 
+      }
     else
       "null"
     end
@@ -289,10 +293,10 @@ helpers do
 
   def deal_json_for_view(table=nil)
     return false if @room.nil?
-    deal_json(table)
+    deal_response(table).to_json
   end
 
-  def deal_json(table=nil)
+  def deal_response(table=nil)
     table ||= @room.games.last.rounds.last.tables.last
 
     unless table.nil?
@@ -312,7 +316,7 @@ helpers do
         :played  => Playingcard::Deck.new(table.discards).to_a,
         :others  => others,
         :current_id => table.current_player_id
-      }.to_json
+      }
     else
       "null"
     end
@@ -436,11 +440,10 @@ get '/player/ready' do
 
       ### ラウンド, テーブルの生成
       table = start_new_round(game, players, current_player_id)
-
     end
 
     ## ゲーム開始をpush
-    Pusher[@room.id].trigger('deal', deal_json(table))
+    Pusher[@room.id].trigger('deal', deal_response(table).to_json)
 
     return_ok "all-players-ready"
   else
@@ -513,7 +516,7 @@ get '/player/action/play' do
   end
 
   ## カード出した
-  Pusher[@room.id].trigger('pass', deal_json(@table))
+  Pusher[@room.id].trigger('play', deal_response(@table).to_json)
 
   return_ok ''
 end
@@ -548,7 +551,7 @@ get '/player/action/pass' do
   end
 
   ## パスした
-  Pusher[@room.id].trigger('pass', deal_json(@table))
+  Pusher[@room.id].trigger('pass', deal_response(@table).to_json)
 
   return_ok ''
 end
@@ -587,6 +590,7 @@ get '/player/action/dobon' do
     loser_id     = @player.id
   end
 
+  table = nil
   DB.transaction do
     ### 勝ちプレイヤー
     r = RoundResult.create(:round_id  => @round.id,
@@ -603,8 +607,14 @@ get '/player/action/dobon' do
     Round.update(:winner_id => winner_id, :loser_id => loser_id)
 
     ### ラウンド, テーブルの生成
-    start_new_round(@game, @room.players, loser_id)
+    table = start_new_round(@game, @room.players, loser_id)
   end
+
+  Pusher[@room.id].trigger('dobon',{ 
+    :table => deal_response(table),
+    :winner_id => winner_id,
+    :loser_id => loser_id
+  }.to_json)
 
   return_ok ''
 end
@@ -649,7 +659,7 @@ end
 
 ### プレイデータ取得用API
 get '/player/self' do
-  player_json()
+  player_response().to_json
 end
 
 get '/player/action/hand' do

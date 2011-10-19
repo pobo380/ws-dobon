@@ -21,7 +21,7 @@
     %script{:type => 'text/javascript',
             :src  => "#{app_root}/js/ws-dobon.js"}
     :javascript
-      if(!#{@player.nil?}) { var player = #{player_json()}; }
+      if(!#{@player.nil?}) { var player = #{player_json_for_view()}; }
       if(#{game_started?}) { var table  = #{deal_json_for_view()};   }
   %body
     %div#ws-dobon-main
@@ -29,6 +29,13 @@
       - # --------------------------------------------------------------
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
         test
+      %div#dialog-select-suit.ui-dialog-content.ui-widget-content{:title=>'スートを選択して下さい。'}
+        %ul#suits_list
+          %li{:val=>"H"} ハート
+          %li{:val=>"S"} スペード
+          %li{:val=>"D"} ダイヤ
+          %li{:val=>"C"} クローバー
+
       %div#title.container
         %h1
 
