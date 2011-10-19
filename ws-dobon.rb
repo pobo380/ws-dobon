@@ -148,6 +148,12 @@ end
 
 helpers do
 
+  ### HTMLのescape
+  helpers do
+    include Rack::Utils
+    alias_method :h, :escape_html
+  end
+
   ### レスポンス生成
   
   def halt_ng(message)
@@ -174,6 +180,10 @@ helpers do
   end
 
   ### 各種制約条件
+  
+  def not_empty(param, name)
+    halt_ng "#{name}が空です。" if param.empty?
+  end
   
   def phase_not_wait_to_dobon
     last_played_time = @table.last_played_time
@@ -334,6 +344,7 @@ end
 ## 部屋の作成
 get '/room/create' do
   player_not_registered
+  halt_ng "部屋の名前を入力して下さい。" unless params[:name]
   halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
 
   DB.transaction do
@@ -592,7 +603,7 @@ get '/player/action/dobon' do
     Round.update(:winner_id => winner_id, :loser_id => loser_id)
 
     ### ラウンド, テーブルの生成
-    start_new_round(@game, @room.players, next_round_current_player_id)
+    start_new_round(@game, @room.players, loser_id)
   end
 
   return_ok ''
@@ -651,7 +662,9 @@ end
 
 ## index.haml
 get '/' do
-  @rooms = Room.filter(:is_closed => false)
+  @rooms = Room.filter(:is_closed => false).reject{|room|
+    not room.games.nil? and not room.games.empty?
+  }
   haml :index
 end
 

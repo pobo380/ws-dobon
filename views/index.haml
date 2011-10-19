@@ -59,7 +59,7 @@
           %ul#room_list
             - @rooms.each do |room|
               %li.ui-widget-content
-                %span.room_name{:value => "#{room.id}"}= "#{room.name}"
+                %span.room_name{:value => "#{room.id}"}= "#{h room.name}"
 
       - # --------------------------------------------------------------
       %div#game_table_container.container

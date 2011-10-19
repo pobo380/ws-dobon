@@ -301,6 +301,9 @@ $(function() {
                        });
   });
 
+  /**
+   * プレイ動作のボタン
+   */
   $("#game_play").bind('click', function(){
     /* スートの選択 */
     UI.ajax.simple_get("player/action/play",
@@ -316,6 +319,9 @@ $(function() {
   });
 
   $("#game_dobon").bind('click', function(){
+    UI.ajax.simple_get("player/action/dobon", {},
+                       function(msg) {
+                       });
   });
 
   // メニュー選択時のクリック音
