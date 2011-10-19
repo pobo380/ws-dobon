@@ -63,11 +63,14 @@ var UI = {
           break;
         }
       }
+      others = others.slice(player_idx).concat(others.slice(0, player_idx));
+      others.shift();
+      console.log(others);
 
       var others_names  = $(".other_name");
       //var other_scores = $(".other_score");
       var others_hands   = $(".other_hand");
-      for(var idx = (player_idx+1)%others.length; idx != player_idx; idx = (idx+1)%others.length) {
+      for(var idx = 0; idx < others.length; ++idx) {
         $(others_names[idx]).text(others[idx].name);
         $(others_hands[idx]).text(others[idx].hand);
       }
@@ -276,6 +279,7 @@ $(function() {
     UI.bind_pusher_events(pusher, player.room_id);
 
     UI.update.show_table();
+
     if(player.hand != "") {
       UI.update.hand(player.hand.split(","));
     }
