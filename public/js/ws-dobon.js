@@ -145,7 +145,7 @@ var UI = {
           case 'D':
             rate = 3; break;
           case 'F':
-            break;
+            rate = 0; break;
         }
         pos.y = (size.h + 0) * rate * -1;
 
@@ -154,7 +154,7 @@ var UI = {
         num_list = [
           '1', '2', '3', '4',
           '5', '6', '7', '8',
-          '9', '0', 'J', 'Q', 'K'
+          '9', '0', 'J', 'Q', 'K', 'F'
         ];
         for(var i = 0; i < num_list.length; ++i) {
           if(num_list[i] == num) {

@@ -651,7 +651,7 @@ get '/player/action/agari' do
     loser_id = points.sort_by{|player, point| point}.last[0].id
     Round.update(:winner_id => @table.last_played.id, :loser_id => loser_id)
 
-    start_new_round(@game, @room.players, next_round_current_player_id)
+    start_new_round(@game, @room.players, loser_id)
   end
 
   return_ok ''

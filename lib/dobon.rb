@@ -45,26 +45,31 @@ module Dobon
     end
 
     def put(card, specify=nil)
-      return nil if ( ! card.joker? && self.top.joker? && @restriction )
-      p 'ok joker?' # debug print
-      return nil if (   card.number != self.top.number && @restriction )
-      p 'ok restrection' # debug print
-      return nil if ((not(card.number == 11 || card.number == 14)) and card.suit != @specify ) if ( @specify )
-      p 'ok specify' # debug print
+      puts "check: specify is not nil => #{specify}"
       return nil if ( ( card.number == 11 || card.number == 14 ) && ! specify )
-      p 'ok specify arg check' # debug print
 
-      if card.number == self.top.number ||
-         card.suit == self.top.suit ||
-         card.joker? || card.number == 11 ||
-         self.top.joker? || self.top.number == 11 ||
-         @specify then
-        @discards.push(card)
-        @passed = false
-        self.ruling(specify)
+      puts "check: is joker? => #{@restriction}"
+      return nil if ( ! card.joker? && self.top.joker? && @restriction )
+
+      puts "check: is restrected? => #{@restriction}"
+      return nil if (   card.number != self.top.number && @restriction )
+
+      puts "check: is specified? => #{not @specify.nil?}"
+      unless @specify
+        puts " --> check: suit and number"
+        return nil unless card.number == self.top.number || card.suit == self.top.suit ||
+                          card.joker? || card.number == 11 || self.top.joker? || self.top.number == 11
       else
-        nil
+        puts " --> check: suit => #{not @specify.nil?}"
+        return nil if ((not(card.number == 11 || card.number == 14)) and card.suit != @specify )
       end
+
+      puts "## All OK."
+      puts ""
+
+      @discards.push(card)
+      @passed = false
+      self.ruling(specify)
     end
 
     def ruling(specify=nil)
@@ -90,10 +95,13 @@ module Dobon
         @restriction = true
         @specify = specify
       end
+
       # debug print
-      p ['attack:', @attack].join(' ')
-      p ['restriction:', @restriction].join(' ')
-      p ['specify:', @specify].join(' ')
+      puts "------ now ------"
+      puts ['attack:', @attack].join(' ')
+      puts ['restriction:', @restriction].join(' ')
+      puts ['specify:', @specify].join(' ')
+      puts ""
 
       skip
     end
