@@ -72,6 +72,13 @@ var UI = {
       for(var idx = 0; idx < others.length; ++idx) {
         $(others_names[idx]).text(others[idx].name);
         $(others_hands[idx]).text(others[idx].hand);
+
+        if(others[idx].hand <= 3) {
+          $(others_hands[idx]).addClass("no_more_than_three");
+        }
+        else {
+          $(others_hands[idx]).removeClass("no_more_than_three");
+        }
       }
 
       var others_turn = $("#others_info div");
@@ -90,6 +97,33 @@ var UI = {
         UI.update.game_message("あなたのターンです。");
         $("#game_play, #game_pass").button('enable');
       }
+    },
+
+    // -------------------------------------------
+    // update Ruling
+    // -------------------------------------------
+    "ruling" : function(ruling) {
+      var txt = "";
+      if(ruling.reverse) {
+        txt += "リバース "
+      }
+
+      if(ruling.specify) {
+        var suit;
+        switch(ruling.specify) {
+          case "H":
+            suit = "ハート"; break;
+          case "C":
+            suit = "クローバー"; break;
+          case "S":
+            suit = "スペード"; break;
+          case "D":
+            suit = "ダイヤ"; break;
+        }
+        txt += "ワイルドカード => " + suit;
+      }
+;
+      $("#ruling_info").text(txt);
     },
 
     // -------------------------------------------
@@ -248,6 +282,7 @@ var UI = {
       sounds.select_card.play();
       console.log('received:' + JSON.stringify(data));
       $("#game_ready").button('disable');
+      UI.update.ruling(data.ruling);
       UI.update.played(data.played[data.played.length-1]);
       UI.update.round(data.round);
       UI.update.others(data.others, data.current_id);
@@ -278,6 +313,7 @@ var UI = {
     channel.bind('pass', function(data) {
       sounds.select_card.play();
       console.log('received:' + JSON.stringify(data));
+      UI.update.ruling(data.ruling);
       UI.update.round(data.round);
       UI.update.others(data.others, data.current_id);
       $.getJSON("player/action/hand", function(hand){
@@ -302,7 +338,7 @@ $(function() {
   /**
    * UI Initialize
    */
-  $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass").button();
+  $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass, #room_quit").button();
   $("#room_list").selectable();
   $("#hand").selectable({
     selected : function(event, ui) {
@@ -464,6 +500,23 @@ $(function() {
                   UI.update.ui_message(data.message);
                 }
               });
+  });
+
+  $("#room_quit").bind('click', function() {
+    $("#dialog-quit-confirm").dialog({
+      modal: true,
+      buttons: { はい: function() {
+          UI.ajax.simple_get("player/quit", {},
+                             function(msg) {
+                               location.reload();
+                             });
+          $(this).dialog("close");
+        },
+        いいえ: function() {
+          $(this).dialog("close");
+        }
+      }
+    });
   });
 
   // メニュー選択時のクリック音

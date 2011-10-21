@@ -101,6 +101,10 @@ div#ws-dobon-main
   div#dialog-select-suit
     :display none
 
+  div#dialog-quit-confirm
+    :display none
+
+
   div#game_table_container
     :background-color #f9fff1
     :width 800px
@@ -120,6 +124,15 @@ div#ws-dobon-main
         :top 30px
         :left 20px
         :font-size 1.3em
+        :font-weight bold
+
+      #ruling_info
+        :position absolute
+        :top  350px
+        :left 273px
+        :width 234px
+        :height 19px
+        :text-align center
         :font-weight bold
 
       #table_info
@@ -217,6 +230,10 @@ div#ws-dobon-main
         .other_hand
           :font-weight bold
           :font-size 2.5em
+          :color green
+
+          &.no_more_than_three
+            :color red
 
         .other_message
           :width  140px

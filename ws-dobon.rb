@@ -315,7 +315,13 @@ helpers do
         :round   => @room.games.last.rounds.size,
         :played  => Playingcard::Deck.new(table.discards).to_a,
         :others  => others,
-        :current_id => table.current_player_id
+        :current_id => table.current_player_id,
+        :ruling  => {
+          :passed  => table.passed,
+          :specify => table.specify,
+          :reverse => table.reverse,
+          :restriction => table.restriction,
+        },
       }
     else
       "null"
@@ -393,7 +399,8 @@ end
 ## 部屋からの退出
 get '/player/quit' do
   player_registered
-  game_not_started
+  ### 工大祭用 コメントアウト
+  #game_not_started
 
   ### プレイヤーをinactiveに
   DB.transaction do
@@ -585,6 +592,8 @@ get '/player/action/dobon' do
     winner_id    = @player.id
     loser_id     = @table.last_played.id
   when 'miss-dobon'
+    ## 工大祭用:ミスドボンは認めないことに！！
+    halt_ng "手札の合計と等しくありません"
     rate = 1
     winner_label = 'make'
     loser_label  = 'miss-dobon'

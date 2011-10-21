@@ -36,6 +36,9 @@
           %li{:val=>"D"} ダイヤ
           %li{:val=>"C"} クローバー
 
+      %div#dialog-quit-confirm.ui-dialog-content.ui-widget-content{:title => '確認'}
+        本当に退出しますか？
+
       %div#title.container
         %h1
 
@@ -109,6 +112,8 @@
               %div#deck_cards.playing_card_img{:style => "background-position: -784px 0px"}
               %div#deck_number
                 -
+          - # -----------------------------
+          %div#ruling_info
 
           - # -----------------------------
           %div#game_message
@@ -131,4 +136,6 @@
               ドボン
             %button#game_ready{:value => 'ready'}
               ready
+            %button#room_quit
+              退出
 
