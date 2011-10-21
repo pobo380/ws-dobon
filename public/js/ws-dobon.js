@@ -79,6 +79,7 @@ var UI = {
         if(others[idx].id == current_id) {
           UI.update.game_message(others[idx].name + "のターンです。");
           $(others_turn[idx]).addClass("current_player");
+          $("#game_play, #game_pass").button('disable');
         }
         else {
           $(others_turn[idx]).removeClass("current_player");
@@ -87,6 +88,7 @@ var UI = {
 
       if(current_id == player.id) {
         UI.update.game_message("あなたのターンです。");
+        $("#game_play, #game_pass").button('enable');
       }
     },
 
@@ -115,6 +117,10 @@ var UI = {
     // -------------------------------------------
     "ui_message" : function(msg) {
       $("#ui_message").text(msg);
+      setTimeout(function(){
+        if($("#ui_message").text() == msg)
+        $("#ui_message").text("");
+      }, 3000);
     },
 
     // -------------------------------------------
@@ -125,7 +131,6 @@ var UI = {
         .hide(1500);
       $("#game_table_container")
         .show(1500);
-      $("#game_ready").attr("disabled", false);
     },
 
     /**
@@ -211,15 +216,16 @@ var UI = {
   },
 
   ////////
-  "show_select_suit" : function(callback) {
+  "show_select_suit" : function(ok, cancel) {
     $("#dialog-select-suit").dialog({
       modal: true,
       buttons: { OK: function() {
         $(this).dialog("close");
-        if(callback != undefined) { callback(); }
+        if(ok != undefined) { ok(); }
       },
         Cancel: function() {
         $(this).dialog("close");
+        if(cancel != undefined) { cancel(); }
         }
       }
     });
@@ -228,7 +234,7 @@ var UI = {
   // -------------------------------------------
   // bind Pusher events.
   // -------------------------------------------
-  "bind_pusher_events" : function(pusher, room_id) {
+  "bind_pusher_events" : function(pusher, room_id, sounds) {
     var channel = pusher.subscribe(room_id.toString());
 
     /**
@@ -239,7 +245,9 @@ var UI = {
     });
 
     var update_table = function(data){
+      sounds.select_card.play();
       console.log('received:' + JSON.stringify(data));
+      $("#game_ready").button('disable');
       UI.update.played(data.played[data.played.length-1]);
       UI.update.round(data.round);
       UI.update.others(data.others, data.current_id);
@@ -251,7 +259,16 @@ var UI = {
     channel.bind('deal', update_table);
     channel.bind('play', update_table);
 
+    channel.bind('agari',function(data) {
+      sounds.select_card.play();
+      UI.update.game_message('上がり!!');
+      setTimeout(function() {
+        update_table(data.table);
+      }, 3000);
+    });
+
     channel.bind('dobon', function(data) {
+      sounds.select_card.play();
       UI.update.game_message('ドボン!!');
       setTimeout(function() {
         update_table(data.table);
@@ -259,6 +276,7 @@ var UI = {
     });
 
     channel.bind('pass', function(data) {
+      sounds.select_card.play();
       console.log('received:' + JSON.stringify(data));
       UI.update.round(data.round);
       UI.update.others(data.others, data.current_id);
@@ -285,11 +303,16 @@ $(function() {
    * UI Initialize
    */
   $("#create_room, #join_room, #game_ready, #game_play, #game_dobon, #game_pass").button();
-  $("#room_list, #hand").selectable({
+  $("#room_list").selectable();
+  $("#hand").selectable({
     selected : function(event, ui) {
-      sounds.select_card.play();
+      $(ui.selected).css("margin-top", "-10px");
+    },
+    unselected : function(event, ui) {
+      $(ui.unselected).css("margin-top", "0px");
     }
   });
+
   $("#suits_list").selectable({
     selected : function(event, ui) {
       $(ui.selected).css({fontWeight: "bold", color: "red", backgroundColor: "ddd"})
@@ -347,7 +370,7 @@ $(function() {
           window.player = player;
         });
         var pusher = get_pusher();
-        UI.bind_pusher_events(pusher, data.room_id);
+        UI.bind_pusher_events(pusher, data.room_id, sounds);
         UI.update.show_table();
       });
   });
@@ -376,26 +399,38 @@ $(function() {
     var game_play = $("#game_play");
     game_play.button('disable');
 
-    var callback = function() {
+    var send_request = function() {
       var suit = $("#suits_list .ui-selected").attr("val");
       $.getJSON("player/action/play",
                 { card: card, specify: suit},
                 function(data) {
-                  game_play.button('enable');
-                  game_play.removeClass("ui-state-hover");
                   if(data.status == "NG") {
                     UI.update.ui_message(data.message);
+                    game_play.button('enable');
+                    game_play.removeClass("ui-state-hover");
+                  }
+                  else {
+                    game_play.removeClass("ui-state-hover");
+                    if($("#hand li").length == 1) {
+                      setTimeout(function() {
+                        UI.ajax.simple_get("player/action/agari", {}, function(msg) {
+                        });
+                      }, 5000);
+                    }
                   }
                 });
     };
 
-    if(card == "FF" || card.charAt(1) == "J") {
-      UI.show_select_suit(callback);
+    var cancel = function() {
       game_play.button('enable');
       game_play.removeClass("ui-state-hover");
+    };
+
+    if(card == "FF" || card.charAt(1) == "J") {
+      UI.show_select_suit(send_request, cancel);
     }
     else {
-      callback();
+      send_request();
     }
   });
 
@@ -407,10 +442,10 @@ $(function() {
     UI.update.ui_message("パスしました");
     $.getJSON("player/action/pass",
               function(data) {
-                game_pass.button('enable');
                 game_pass.removeClass("ui-state-hover");
                 if(data.status == "NG") {
                   UI.update.ui_message(data.message);
+                  game_pass.button('enable');
                 }
               });
   });
@@ -443,19 +478,22 @@ $(function() {
    */
   if(player != undefined) {
     var pusher = get_pusher();
-    UI.bind_pusher_events(pusher, player.room_id);
+    UI.bind_pusher_events(pusher, player.room_id, sounds);
 
     /**
      * ゲームが開始しているかどうか
      */
     if(table != undefined) {
       UI.update.game_message("ゲーム開始");
+      $("#game_ready").button('disable');
       UI.update.played(table.played[table.played.length-1]);
       UI.update.round(table.round);
       UI.update.others(table.others, table.current_id);
     }
     else {
       UI.update.game_message("待機中...");
+      $("#game_pass, #game_dobon, #game_ready").button('disable');
+      $("#game_ready").button('enable');
     }
 
     UI.update.show_table();

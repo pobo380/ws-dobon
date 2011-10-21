@@ -195,7 +195,7 @@ helpers do
   def your_turn
     if @current_player.id != @player.id or
        @round.round_state.label != 'wait-to-play'
-      halt_ng "貴方の手番ではありません。"
+      halt_ng "貴方のターンではありません。"
     end
   end
 
@@ -637,6 +637,8 @@ get '/player/action/agari' do
   }.compact
 
   ### 上がり処理
+  table = nil
+  loser_id = nil
   DB.transaction do
     points.each do |player, point|
       rr = RoundResult.create(:round_id  => @round.id,
@@ -653,8 +655,14 @@ get '/player/action/agari' do
     loser_id = points.sort_by{|player, point| point}.last[0].id
     Round.update(:winner_id => @table.last_played.id, :loser_id => loser_id)
 
-    start_new_round(@game, @room.players, loser_id)
+    table = start_new_round(@game, @room.players, loser_id)
   end
+
+  Pusher[@room.id].trigger('agari',{ 
+    :table => deal_response(table),
+    :winner_id => @table.last_played.id,
+    :loser_id => loser_id
+  }.to_json)
 
   return_ok ''
 end

@@ -29,7 +29,7 @@
       - # --------------------------------------------------------------
       %div#dialog-message.ui-dialog-content.ui-widget-content{:title => 'メッセージ'}
         test
-      %div#dialog-select-suit.ui-dialog-content.ui-widget-content{:title=>'スートを選択して下さい。'}
+      %div#dialog-select-suit.ui-dialog-content.ui-widget-content{:title=>'マークを選択して下さい。'}
         %ul#suits_list
           %li{:val=>"H"} ハート
           %li{:val=>"S"} スペード
@@ -78,16 +78,19 @@
               %div.other_name  ---
               %div.other_score 0
               %div.other_hand 0
+              %div.other_message
 
             %div#other_area_opposite
               %div.other_name  ---
               %div.other_score 0
               %div.other_hand 0
+              %div.other_message
 
             %div#other_area_right
               %div.other_name  ---
               %div.other_score 0
               %div.other_hand 0
+              %div.other_message
 
           - # -----------------------------
           %div#round_info
@@ -120,14 +123,12 @@
             %ol#hand
 
           %div#button_area
-            %div.button_block
-              %button#game_play
-                play
-              %button#game_pass
-                pass
-            %div.button_block
-              %button#game_dobon
-                dobon
-              %button#game_ready{:value => 'ready'}
-                ready
+            %button#game_play
+              出す
+            %button#game_pass
+              パス
+            %button#game_dobon
+              ドボン
+            %button#game_ready{:value => 'ready'}
+              ready
 
