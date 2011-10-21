@@ -104,10 +104,17 @@ var UI = {
     },
 
     // -------------------------------------------
-    // update Player's hand.
+    // update game message
     // -------------------------------------------
     "game_message" : function(msg) {
       $("#game_message").text(msg);
+    },
+
+    // -------------------------------------------
+    // update game message
+    // -------------------------------------------
+    "ui_message" : function(msg) {
+      $("#ui_message").text(msg);
     },
 
     // -------------------------------------------
@@ -304,20 +311,38 @@ $(function() {
    * Bind click events
    */
   $("#create_room").bind('click', function() {
-    UI.ajax.simple_get("room/create",
-                       { name: $("#room_name").val() },
-      function(msg) {
-        UI.show_dialog(msg, function(){
-          location.reload();
-        });
+    var create_room = $("#create_room");
+    create_room.button('disable');
+    $.getJSON("room/create",
+              { name: $("#room_name").val() },
+      function(data) {
+        create_room.button('enable');
+        create_room.removeClass("ui-state-hover");
+        if(data.status == "NG") {
+          UI.show_dialog(data.message);
+          return;
+        }
+        else {
+          UI.show_dialog(data.message, function(){
+            location.reload();
+          });
+        }
       });
   });
 
   $("#join_room").bind('click', function() {
+    var join_room = $("#join_room");
+    join_room.button('disable');
     $.getJSON("player/join",
               { name:    $("#player_name").val(),
                 room_id: $("#room_list .ui-selected span").attr("value") },
       function(data) {
+        join_room.button('enable');
+        join_room.removeClass("ui-state-hover");
+        if(data.status == "NG") {
+          UI.show_dialog(data.message);
+          return;
+        }
         $.getJSON("player/self",{}, function(player){
           window.player = player;
         });
@@ -343,18 +368,31 @@ $(function() {
 
     /* スートの選択 */
     var card = $("#hand .ui-selected").attr("val");
-    var suit = $("#suits_list .ui-selected").attr("val");
+    if(card == undefined) {
+      UI.update.ui_message("カードを選択して下さい。");
+      return;
+    }
 
+    var game_play = $("#game_play");
+    game_play.button('disable');
 
     var callback = function() {
-      UI.ajax.simple_get("player/action/play",
-                         { card: card, specify: suit},
-                         function(msg) {
-                         });
+      var suit = $("#suits_list .ui-selected").attr("val");
+      $.getJSON("player/action/play",
+                { card: card, specify: suit},
+                function(data) {
+                  game_play.button('enable');
+                  game_play.removeClass("ui-state-hover");
+                  if(data.status == "NG") {
+                    UI.update.ui_message(data.message);
+                  }
+                });
     };
 
     if(card == "FF" || card.charAt(1) == "J") {
-      UI.show_select_suit(callback)
+      UI.show_select_suit(callback);
+      game_play.button('enable');
+      game_play.removeClass("ui-state-hover");
     }
     else {
       callback();
@@ -362,19 +400,35 @@ $(function() {
   });
 
   $("#game_pass").bind('click', function(){
+    var game_pass = $("#game_pass");
+    game_pass.button('disable');
+
     sounds.button.play();
-    UI.update.game_message("パスしました");
-    UI.ajax.simple_get("player/action/pass", {},
-                       function(msg) {
-                       });
+    UI.update.ui_message("パスしました");
+    $.getJSON("player/action/pass",
+              function(data) {
+                game_pass.button('enable');
+                game_pass.removeClass("ui-state-hover");
+                if(data.status == "NG") {
+                  UI.update.ui_message(data.message);
+                }
+              });
   });
 
   $("#game_dobon").bind('click', function(){
+    var game_dobon = $("#game_dobon");
+    game_dobon.button('disable');
+
     sounds.button.play();
-    UI.update.game_message("ドボンしました");
-    UI.ajax.simple_get("player/action/dobon", {},
-                       function(msg) {
-                       });
+    UI.update.ui_message("ドボンしました");
+    $.getJSON("player/action/dobon",
+              function(data) {
+                game_dobon.button('enable');
+                game_dobon.removeClass("ui-state-hover");
+                if(data.status == "NG") {
+                  UI.update.ui_message(data.message);
+                }
+              });
   });
 
   // メニュー選択時のクリック音

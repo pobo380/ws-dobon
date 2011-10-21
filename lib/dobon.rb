@@ -29,7 +29,12 @@ module Dobon
       if card = @deck.pop then
         card
       else
-        reset
+        top = @discards.last
+        @discards.pop
+        @deck.concat(@discards)
+        @discards.clear
+        @deck.shuffle
+        @discards.push(top)
         @deck.pop
       end
     end

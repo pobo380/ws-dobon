@@ -348,8 +348,7 @@ end
 ## 部屋の作成
 get '/room/create' do
   player_not_registered
-  halt_ng "部屋の名前を入力して下さい。" unless params[:name]
-  halt '["NG", "部屋の名前を入力して下さい。"]' unless params[:name]
+  halt_ng "部屋の名前を入力して下さい。" if params[:name].nil? or params[:name].empty?
 
   DB.transaction do
     room = Room.create(:name => params[:name], :is_closed => false)
@@ -361,7 +360,7 @@ end
 ## 部屋への参加
 get '/player/join' do
   player_not_registered
-  halt_ng "プレイヤーの名前を入力して下さい。" unless params[:name]
+  halt_ng "プレイヤーの名前を入力して下さい。" if params[:name].nil? or params[:name].empty?
   halt_ng "部屋を指定して下さい。" unless params[:room_id]
 
   @room = Room.find(:id => params[:room_id])
@@ -369,6 +368,9 @@ get '/player/join' do
   halt_ng "存在しない部屋IDです" if @room.nil?
   halt_ng "部屋が既に閉じています" if @room.is_closed
   game_not_started
+
+  puts "#{@room.players.size}"
+  halt_ng "部屋が満員です" if @room.players.size == 4
 
   player = Player.find(:sessionkey => session[:sessionkey])
 
@@ -494,7 +496,7 @@ get '/player/action/play' do
   table = table_model_to_logic(@table)
   res = table.put(card, params[:specify])
   if res.nil?
-    halt_ng 'プレイすることのできないカードであるか、スートが指定されていません。'
+    halt_ng 'このカードは場に出すことが出来ません。'
   end
 
   DB.transaction do
