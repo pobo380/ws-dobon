@@ -14,21 +14,32 @@ var UI = {
     // Load audio resources.
     // -------------------------------------------
     "load" : function(sounds) {
-      var ext = "";
-      if((new Audio("")).canPlayType("audio/ogg") != "") {
-        ext = ".ogg";
+      if(Audio != undefined) {
+        var ext = "";
+        if((new Audio("")).canPlayType("audio/ogg") != "") {
+          ext = ".ogg";
+        }
+        else {
+          ext = ".wav";
+        }
+
+        var res = {};
+        for(var key in sounds) {
+          res[key] = new Audio("../sound/" + sounds[key] + ext);
+          res[key].autoplay = false;
+        }
+
+        return res;
       }
       else {
-        ext = ".wav";
-      }
+        var res = {};
+        for(var key in sounds) {
+          res[key] = {play: function(){ console.log("dummy");}};
+          res[key].autoplay = false;
+        }
 
-      var res = {};
-      for(var key in sounds) {
-        res[key] = new Audio("../sound/" + sounds[key] + ext);
-        res[key].autoplay = false;
+        return res;
       }
-
-      return res;
     },
   },
 

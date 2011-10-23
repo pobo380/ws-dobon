@@ -293,12 +293,17 @@ helpers do
 
   def deal_json_for_view(table=nil)
     return false if @room.nil?
+    table = nil
+    begin
+      table = @room.games.last.rounds.last.tables.last
+    rescue => e
+      puts e
+      return false
+    end
     deal_response(table).to_json
   end
 
-  def deal_response(table=nil)
-    table ||= @room.games.last.rounds.last.tables.last
-
+  def deal_response(table)
     unless table.nil?
       others = @room.players.map{|player|
         {
